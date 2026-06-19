@@ -7,3 +7,5 @@ coverage/
 .env.*
 !.env.example
 vite.config.ts.timestamp-*
+*.pem
+*.key

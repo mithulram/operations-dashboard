@@ -10,6 +10,11 @@ A production-style React dashboard that gives operations teams a single view of 
 
 Platform and SRE teams routinely juggle separate tools for SLO tracking, error-budget burn, and incident context. During an outage, switching between dashboards slows triage. This project shows a focused operations view that pulls quantitative health signals and qualitative incident metadata into one responsive, accessible UI with filtering, loading states, and automatic refresh.
 
+## Prerequisites
+
+- **Node.js 22+** (see `.nvmrc`). With [nvm](https://github.com/nvm-sh/nvm): `nvm use`
+- npm (bundled with Node)
+
 ## Quick start
 
 Start the backend first (project #4):
@@ -26,7 +31,8 @@ Then run the dashboard:
 
 ```bash
 cd ../operations-dashboard
-npm install
+nvm use
+npm ci
 npm run dev
 ```
 
@@ -47,7 +53,8 @@ VITE_API_BASE_URL=https://monitor.example.com npm run build
 ## Scripts
 
 ```bash
-npm install    # install dependencies
+nvm use          # use Node 22+ from .nvmrc
+npm ci           # install dependencies from package-lock.json
 npm run dev      # start Vite dev server with API proxy
 npm test         # run Vitest component tests
 npm run build    # type-check and produce production build
