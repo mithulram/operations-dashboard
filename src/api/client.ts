@@ -1,5 +1,6 @@
 import type { Incident, Summary } from '../types';
 import { ApiError } from '../types';
+import { parseIncidents, parseSummary } from './validate';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
@@ -25,11 +26,13 @@ export async function fetchHealth(): Promise<{ status: string }> {
 }
 
 export async function fetchSummary(): Promise<Summary> {
-  return request<Summary>('/api/v1/summary');
+  const data = await request<unknown>('/api/v1/summary');
+  return parseSummary(data);
 }
 
 export async function fetchIncidents(): Promise<Incident[]> {
-  return request<Incident[]>('/api/v1/incidents');
+  const data = await request<unknown>('/api/v1/incidents');
+  return parseIncidents(data);
 }
 
 export async function fetchDashboardData(): Promise<{ summary: Summary; incidents: Incident[] }> {
