@@ -1,8 +1,8 @@
 # Operations Dashboard
 
-A production-style React dashboard that gives operations teams a single view of availability SLOs, error-budget headroom, and active incidents. It consumes live REST data from the companion [Service Health & Incident Monitor](https://github.com/mithulram/service-health-incident-monitor) backend (portfolio project #4).
+A production-style React operations app for fleet health, persisted URL monitors, and incident context. It consumes the live [Service Health & Incident Monitor](https://github.com/mithulram/service-health-incident-monitor) backend (portfolio project #4).
 
-> **Scope note:** This is a portfolio frontend paired with a synthetic in-memory API. It demonstrates how operational signals are surfaced to on-call engineers; it is not a replacement for Grafana, PagerDuty, or an enterprise observability stack.
+Public summary and incident endpoints remain readable without credentials. Monitor management routes are protected on the backend with `ADMIN_API_KEY`; this UI stores that key locally in the browser and sends `Authorization: Bearer <key>` only for protected monitor requests.
 
 ## Live demo
 
@@ -11,7 +11,7 @@ A production-style React dashboard that gives operations teams a single view of 
 | Backend API | https://service-health-incident-monitor.onrender.com |
 | Frontend dashboard | https://operations-dashboard-b8v.pages.dev |
 
-Verify end-to-end (requires Node 22+):
+Verify the deployed public dashboard + API (requires Node 22+):
 
 ```bash
 nvm use
@@ -20,11 +20,13 @@ API_URL=https://service-health-incident-monitor.onrender.com \
 npm run smoke:deployed
 ```
 
+The smoke test checks public HTML, health/summary/incidents endpoints, and CORS. It does not exercise protected monitor management because no admin key is available in CI or smoke scripts.
+
 ![Operations dashboard — desktop](docs/screenshots/dashboard-desktop.png)
 
 ## Problem statement
 
-Platform and SRE teams routinely juggle separate tools for SLO tracking, error-budget burn, and incident context. During an outage, switching between dashboards slows triage. This project shows a focused operations view that pulls quantitative health signals and qualitative incident metadata into one responsive, accessible UI with filtering, loading states, and automatic refresh.
+Platform and SRE teams routinely juggle separate tools for uptime checks, fleet health, and incident context. This project shows a focused operations product UI that combines fleet monitor status, check history, synthetic SLO signals, and incident metadata in one responsive, accessible app with filtering, loading states, and automatic refresh on the dashboard.
 
 ## Prerequisites
 
@@ -44,6 +46,8 @@ python -m pip install -e '.[test]'
 DEMO_MODE=true uvicorn service_monitor.app:app --host 127.0.0.1 --port 8090
 ```
 
+For local monitor management against a protected backend, run the backend with a known `ADMIN_API_KEY` instead of `DEMO_MODE=true`.
+
 Then run the dashboard:
 
 ```bash
@@ -55,6 +59,15 @@ npm run dev
 ```
 
 Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite proxies `/api` and `/healthz` to `http://127.0.0.1:8090` during development.
+
+### Admin API key (local only)
+
+1. Open **Settings** in the dashboard.
+2. Paste the backend `ADMIN_API_KEY` value.
+3. Save. The key is stored in this browser's `localStorage` only.
+4. Use **Monitors** to create, edit, pause, delete, and run checks.
+
+Never commit the real admin key. Do not put `ADMIN_API_KEY` in frontend build environment variables or Cloudflare Pages settings.
 
 ### Environment
 
@@ -69,8 +82,6 @@ VITE_API_BASE_URL=https://monitor.example.com npm run build
 ```
 
 ## Deploy for free
-
-> **Demo only:** This dashboard reads synthetic in-memory data from the companion backend. It is not production monitoring software.
 
 Recommended setup:
 
@@ -88,11 +99,13 @@ Recommended setup:
 | Node version | `22` |
 | `VITE_API_BASE_URL` | `https://<render-backend>.onrender.com` |
 
+Do **not** set `ADMIN_API_KEY` in the frontend build. Users enter it in Settings after deployment.
+
 **Deployment order**
 
 1. Deploy the backend and note its `https://*.onrender.com` URL.
 2. Deploy this frontend with `VITE_API_BASE_URL` set to that backend URL.
-3. Update the backend `WEB_CORS_ORIGINS` environment variable with the final frontend origin (for example `https://operations-dashboard.pages.dev`).
+3. Update the backend `WEB_CORS_ORIGINS` environment variable with the final frontend origin (for example `https://operations-dashboard-b8v.pages.dev`).
 4. Redeploy the backend so CORS allows the dashboard origin.
 5. Run the deployed smoke test (Node 22+ required):
 
@@ -102,8 +115,6 @@ FRONTEND_URL=https://your-dashboard.pages.dev \
 API_URL=https://your-monitor.onrender.com \
 npm run smoke:deployed
 ```
-
-The smoke test checks that the frontend serves HTML, the API health/summary/incidents endpoints respond, and the backend returns the correct CORS header for the frontend origin.
 
 ## Scripts
 
@@ -118,20 +129,27 @@ npm run smoke:deployed  # verify live frontend + API after deploy
 
 ## Architecture
 
-- **React + TypeScript + Vite** for a fast, typed SPA toolchain.
-- **`src/api/client.ts`** — typed `fetch` wrapper with network and HTTP error handling.
-- **`App.tsx`** — orchestrates data loading, 30-second auto-refresh (paused on error), and client-side incident filtering.
-- **Components** — summary metric cards, filter bar, incidents table, loading skeleton, and error banner with retry.
-- **Accessibility** — semantic landmarks, `aria-live` regions, keyboard-friendly filter chips, and table captions.
+- **React + TypeScript + Vite + react-router-dom** for a typed SPA with Dashboard, Monitors, Incidents, and Settings views.
+- **`src/api/client.ts`** — typed `fetch` wrapper with public and protected monitor endpoints.
+- **`src/auth/adminKey.ts`** — localStorage helpers for the user-entered admin key.
+- **`src/context/AdminKeyContext.tsx`** — shared auth state for monitor management.
+- **Components** — fleet summary cards, monitor list with check history, settings panel, filter bar, incidents table, loading skeleton, and error banner with retry.
+- **Accessibility** — semantic landmarks, `aria-live` regions, keyboard-friendly controls, and table captions.
 - **CI** — GitHub Actions runs `npm ci`, `npm test`, and `npm run build` on every push.
 
 ## API contract
 
-| Endpoint | Used for |
-|---|---|
-| `GET /healthz` | Liveness check |
-| `GET /api/v1/summary` | Availability, SLO target, error budget, open incident count |
-| `GET /api/v1/incidents` | Incident list with severity, status, and timestamps |
+| Endpoint | Auth | Used for |
+|---|---|---|
+| `GET /healthz` | Public | Liveness check |
+| `GET /api/v1/summary` | Public | Fleet monitor counts, synthetic SLO metrics, open incident count |
+| `GET /api/v1/incidents` | Public | Incident list with severity, status, and timestamps |
+| `GET /api/v1/monitors` | Bearer admin key | Monitor list |
+| `POST /api/v1/monitors` | Bearer admin key | Create monitor |
+| `PATCH /api/v1/monitors/{id}` | Bearer admin key | Update or pause monitor |
+| `DELETE /api/v1/monitors/{id}` | Bearer admin key | Delete monitor |
+| `POST /api/v1/checks/run/{id}` | Bearer admin key | Run check now |
+| `GET /api/v1/monitors/{id}/checks` | Bearer admin key | Recent check history |
 
 ## Screenshots
 
@@ -144,7 +162,7 @@ Capture after starting the Service Health backend and `npm run dev`.
 
 ## Resume-ready description
 
-> Built a TypeScript/React operations dashboard that consumes a live SLO and incident API, surfaces availability and error-budget metrics with accessible filtering, handles loading and retry states, auto-refreshes on a 30-second cadence, and ships with Vitest component tests and GitHub Actions CI.
+> Built a TypeScript/React operations product UI with react-router navigation, local admin-key auth for protected monitor APIs, fleet health cards, monitor CRUD with check history, incident filtering, accessible loading/retry states, Vitest coverage, and GitHub Actions CI against a live Render backend.
 
 ## License
 
