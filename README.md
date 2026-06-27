@@ -9,12 +9,12 @@ A production-style React dashboard that gives operations teams a single view of 
 | Service | URL |
 |---|---|
 | Backend API | https://service-health-incident-monitor.onrender.com |
-| Frontend dashboard | https://operations-dashboard-76xm.onrender.com |
+| Frontend dashboard | https://operations-dashboard-b8v.pages.dev |
 
 Verify end-to-end:
 
 ```bash
-FRONTEND_URL=https://operations-dashboard-76xm.onrender.com \
+FRONTEND_URL=https://operations-dashboard-b8v.pages.dev \
 API_URL=https://service-health-incident-monitor.onrender.com \
 npm run smoke:deployed
 ```
