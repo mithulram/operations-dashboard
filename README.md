@@ -11,9 +11,10 @@ A production-style React dashboard that gives operations teams a single view of 
 | Backend API | https://service-health-incident-monitor.onrender.com |
 | Frontend dashboard | https://operations-dashboard-b8v.pages.dev |
 
-Verify end-to-end:
+Verify end-to-end (requires Node 22+):
 
 ```bash
+nvm use
 FRONTEND_URL=https://operations-dashboard-b8v.pages.dev \
 API_URL=https://service-health-incident-monitor.onrender.com \
 npm run smoke:deployed
@@ -93,9 +94,10 @@ Recommended setup:
 2. Deploy this frontend with `VITE_API_BASE_URL` set to that backend URL.
 3. Update the backend `WEB_CORS_ORIGINS` environment variable with the final frontend origin (for example `https://operations-dashboard.pages.dev`).
 4. Redeploy the backend so CORS allows the dashboard origin.
-5. Run the deployed smoke test:
+5. Run the deployed smoke test (Node 22+ required):
 
 ```bash
+nvm use
 FRONTEND_URL=https://your-dashboard.pages.dev \
 API_URL=https://your-monitor.onrender.com \
 npm run smoke:deployed

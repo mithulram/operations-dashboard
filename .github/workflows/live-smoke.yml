@@ -1,0 +1,26 @@
+name: live-smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run deployed smoke test
+        run: npm run smoke:deployed
+        env:
+          FRONTEND_URL: https://operations-dashboard-b8v.pages.dev
+          API_URL: https://service-health-incident-monitor.onrender.com

@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Portfolio operations dashboard consuming live SLO and incident data",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke:deployed": "node scripts/smoke-deployed.mjs"
+    "smoke:deployed": "node scripts/require-node22.mjs && node scripts/smoke-deployed.mjs"
   },
   "dependencies": {
     "react": "^19.1.0",
