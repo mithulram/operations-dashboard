@@ -15,3 +15,11 @@ export function formatTimestamp(iso: string): string {
     timeZoneName: 'short',
   });
 }
+
+/** Strip trailing slashes so `${base}${path}` never produces `//api/...`. */
+export function normalizeApiBaseUrl(raw: string | undefined): string {
+  if (!raw) {
+    return '';
+  }
+  return raw.replace(/\/+$/, '');
+}

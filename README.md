@@ -1,8 +1,23 @@
 # Operations Dashboard
 
-A production-style React dashboard that gives operations teams a single view of availability SLOs, error-budget headroom, and active incidents. It consumes live REST data from the companion [Service Health & Incident Monitor](../service-health-incident-monitor) backend (portfolio project #4).
+A production-style React dashboard that gives operations teams a single view of availability SLOs, error-budget headroom, and active incidents. It consumes live REST data from the companion [Service Health & Incident Monitor](https://github.com/mithulram/service-health-incident-monitor) backend (portfolio project #4).
 
 > **Scope note:** This is a portfolio frontend paired with a synthetic in-memory API. It demonstrates how operational signals are surfaced to on-call engineers; it is not a replacement for Grafana, PagerDuty, or an enterprise observability stack.
+
+## Live demo
+
+| Service | URL |
+|---|---|
+| Backend API | _pending_ |
+| Frontend dashboard | _pending_ |
+
+After both services are deployed, verify end-to-end:
+
+```bash
+FRONTEND_URL=https://your-dashboard.pages.dev \
+API_URL=https://your-monitor.onrender.com \
+npm run smoke:deployed
+```
 
 ![Operations dashboard — desktop](docs/screenshots/dashboard-desktop.png)
 
@@ -20,17 +35,19 @@ Platform and SRE teams routinely juggle separate tools for SLO tracking, error-b
 Start the backend first (project #4):
 
 ```bash
-cd ../service-health-incident-monitor
+git clone https://github.com/mithulram/service-health-incident-monitor.git
+cd service-health-incident-monitor
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[test]'
-uvicorn service_monitor.app:app --host 127.0.0.1 --port 8090
+DEMO_MODE=true uvicorn service_monitor.app:app --host 127.0.0.1 --port 8090
 ```
 
 Then run the dashboard:
 
 ```bash
-cd ../operations-dashboard
+git clone https://github.com/mithulram/operations-dashboard.git
+cd operations-dashboard
 nvm use
 npm ci
 npm run dev
@@ -42,7 +59,7 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite proxies `/api` and `/h
 
 | Variable | Purpose |
 |---|---|
-| `VITE_API_BASE_URL` | Optional API origin. Leave empty to use relative paths via the Vite dev proxy or same-origin deployment. |
+| `VITE_API_BASE_URL` | Optional API origin. Leave empty to use relative paths via the Vite dev proxy or same-origin deployment. Trailing slashes are normalized automatically. |
 
 Example for a deployed API:
 
@@ -50,14 +67,51 @@ Example for a deployed API:
 VITE_API_BASE_URL=https://monitor.example.com npm run build
 ```
 
+## Deploy for free
+
+> **Demo only:** This dashboard reads synthetic in-memory data from the companion backend. It is not production monitoring software.
+
+Recommended setup:
+
+| Layer | Host | Notes |
+|---|---|---|
+| Backend | [Render](https://render.com) Free Web Service | Deploy [service-health-incident-monitor](https://github.com/mithulram/service-health-incident-monitor) first |
+| Frontend | [Cloudflare Pages](https://pages.cloudflare.com) or Render Static Site | Node 22, build `dist` output |
+
+**Frontend build settings**
+
+| Setting | Value |
+|---|---|
+| Build command | `npm ci && npm run build` |
+| Output directory | `dist` |
+| Node version | `22` |
+| `VITE_API_BASE_URL` | `https://<render-backend>.onrender.com` |
+
+**Deployment order**
+
+1. Deploy the backend and note its `https://*.onrender.com` URL.
+2. Deploy this frontend with `VITE_API_BASE_URL` set to that backend URL.
+3. Update the backend `WEB_CORS_ORIGINS` environment variable with the final frontend origin (for example `https://operations-dashboard.pages.dev`).
+4. Redeploy the backend so CORS allows the dashboard origin.
+5. Run the deployed smoke test:
+
+```bash
+FRONTEND_URL=https://your-dashboard.pages.dev \
+API_URL=https://your-monitor.onrender.com \
+npm run smoke:deployed
+```
+
+The smoke test checks that the frontend serves HTML, the API health/summary/incidents endpoints respond, and the backend returns the correct CORS header for the frontend origin.
+
 ## Scripts
 
 ```bash
-nvm use          # use Node 22+ from .nvmrc
-npm ci           # install dependencies from package-lock.json
-npm run dev      # start Vite dev server with API proxy
-npm test         # run Vitest component tests
-npm run build    # type-check and produce production build
+nvm use               # use Node 22+ from .nvmrc
+npm ci                # install dependencies from package-lock.json
+npm run dev           # start Vite dev server with API proxy
+npm test              # run Vitest component tests
+npm run build         # type-check and produce production build
+npm run smoke:deployed  # verify live frontend + API after deploy
 ```
 
 ## Architecture

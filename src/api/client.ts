@@ -1,11 +1,16 @@
 import type { Incident, Summary } from '../types';
 import { ApiError } from '../types';
+import { normalizeApiBaseUrl } from '../utils';
 import { parseIncidents, parseSummary } from './validate';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+const API_BASE = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
+
+function buildApiUrl(path: string, base: string = API_BASE): string {
+  return base ? `${base}${path}` : path;
+}
 
 async function request<T>(path: string): Promise<T> {
-  const url = `${API_BASE}${path}`;
+  const url = buildApiUrl(path);
 
   let response: Response;
   try {
@@ -39,3 +44,5 @@ export async function fetchDashboardData(): Promise<{ summary: Summary; incident
   const [summary, incidents] = await Promise.all([fetchSummary(), fetchIncidents()]);
   return { summary, incidents };
 }
+
+export { API_BASE, buildApiUrl };
