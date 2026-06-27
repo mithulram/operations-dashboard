@@ -8,14 +8,14 @@ A production-style React dashboard that gives operations teams a single view of 
 
 | Service | URL |
 |---|---|
-| Backend API | _pending_ |
-| Frontend dashboard | _pending_ |
+| Backend API | https://service-health-incident-monitor.onrender.com |
+| Frontend dashboard | https://operations-dashboard-76xm.onrender.com |
 
-After both services are deployed, verify end-to-end:
+Verify end-to-end:
 
 ```bash
-FRONTEND_URL=https://your-dashboard.pages.dev \
-API_URL=https://your-monitor.onrender.com \
+FRONTEND_URL=https://operations-dashboard-76xm.onrender.com \
+API_URL=https://service-health-incident-monitor.onrender.com \
 npm run smoke:deployed
 ```
 
