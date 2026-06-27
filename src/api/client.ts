@@ -1,26 +1,69 @@
-import type { Incident, Summary } from '../types';
+import type { CheckHistoryItem, Incident, Monitor, MonitorInput, Summary } from '../types';
 import { ApiError } from '../types';
 import { normalizeApiBaseUrl } from '../utils';
-import { parseIncidents, parseSummary } from './validate';
+import {
+  parseCheckHistory,
+  parseIncidents,
+  parseMonitor,
+  parseMonitors,
+  parseSummary,
+} from './validate';
 
 const API_BASE = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
-function buildApiUrl(path: string, base: string = API_BASE): string {
+export function buildApiUrl(path: string, base: string = API_BASE): string {
   return base ? `${base}${path}` : path;
 }
 
-async function request<T>(path: string): Promise<T> {
-  const url = buildApiUrl(path);
+interface RequestOptions {
+  method?: string;
+  body?: unknown;
+  adminApiKey?: string | null;
+  requireAuth?: boolean;
+}
 
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const { method = 'GET', body, adminApiKey, requireAuth = false } = options;
+
+  if (requireAuth && !adminApiKey) {
+    throw new ApiError('Admin API key is required for monitor management.', 401);
+  }
+
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
+  if (adminApiKey) {
+    headers.Authorization = `Bearer ${adminApiKey}`;
+  }
+
+  const url = buildApiUrl(path);
   let response: Response;
   try {
-    response = await fetch(url);
+    response = await fetch(url, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
   } catch {
     throw new ApiError('Unable to reach the service health API. Is the backend running on port 8090?');
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   if (!response.ok) {
-    throw new ApiError(`Request failed with status ${response.status}`, response.status);
+    let detail = `Request failed with status ${response.status}`;
+    try {
+      const payload = (await response.json()) as { detail?: string };
+      if (payload.detail) {
+        detail = payload.detail;
+      }
+    } catch {
+      // ignore parse errors for error bodies
+    }
+    throw new ApiError(detail, response.status);
   }
 
   return response.json() as Promise<T>;
@@ -45,4 +88,70 @@ export async function fetchDashboardData(): Promise<{ summary: Summary; incident
   return { summary, incidents };
 }
 
-export { API_BASE, buildApiUrl };
+export async function getMonitors(adminApiKey: string | null): Promise<Monitor[]> {
+  const data = await request<unknown>('/api/v1/monitors', {
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseMonitors(data);
+}
+
+export async function createMonitor(
+  input: MonitorInput,
+  adminApiKey: string | null,
+): Promise<Monitor> {
+  const data = await request<unknown>('/api/v1/monitors', {
+    method: 'POST',
+    body: input,
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseMonitor(data, 0);
+}
+
+export async function updateMonitor(
+  id: number,
+  input: Partial<MonitorInput>,
+  adminApiKey: string | null,
+): Promise<Monitor> {
+  const data = await request<unknown>(`/api/v1/monitors/${id}`, {
+    method: 'PATCH',
+    body: input,
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseMonitor(data, 0);
+}
+
+export async function deleteMonitor(id: number, adminApiKey: string | null): Promise<void> {
+  await request<void>(`/api/v1/monitors/${id}`, {
+    method: 'DELETE',
+    adminApiKey,
+    requireAuth: true,
+  });
+}
+
+export async function runMonitorCheck(
+  id: number,
+  adminApiKey: string | null,
+): Promise<CheckHistoryItem & { monitor_id: number }> {
+  return request<CheckHistoryItem & { monitor_id: number }>(`/api/v1/checks/run/${id}`, {
+    method: 'POST',
+    adminApiKey,
+    requireAuth: true,
+  });
+}
+
+export async function getMonitorChecks(
+  id: number,
+  adminApiKey: string | null,
+  limit = 50,
+): Promise<CheckHistoryItem[]> {
+  const data = await request<unknown>(`/api/v1/monitors/${id}/checks?limit=${limit}`, {
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseCheckHistory(data);
+}
+
+export { API_BASE };

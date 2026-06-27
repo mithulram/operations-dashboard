@@ -1,4 +1,13 @@
-export interface Summary {
+export interface FleetSummaryFields {
+  monitors_total?: number;
+  monitors_up?: number;
+  monitors_down?: number;
+  monitors_paused?: number;
+  monitors_unknown?: number;
+  average_response_time_ms_24h?: number | null;
+}
+
+export interface Summary extends FleetSummaryFields {
   requests_total: number;
   requests_successful: number;
   requests_failed: number;
@@ -20,6 +29,49 @@ export interface Incident {
 export type SeverityFilter = 'ALL' | 'SEV-1' | 'SEV-2' | 'SEV-3';
 export type StatusFilter = 'ALL' | 'OPEN' | 'RESOLVED';
 
+export type MonitorStatus = 'up' | 'down' | 'paused' | 'unknown';
+export type HttpMethod = 'GET' | 'HEAD';
+
+export interface Monitor {
+  id: number;
+  name: string;
+  url: string;
+  method: HttpMethod;
+  interval_seconds: number;
+  timeout_seconds: number;
+  expected_status_min: number;
+  expected_status_max: number;
+  is_paused: boolean;
+  created_at: string;
+  updated_at: string;
+  last_check_at: string | null;
+  last_status: MonitorStatus;
+  last_status_code: number | null;
+  last_response_time_ms: number | null;
+  consecutive_failures: number;
+  uptime_ratio_24h: number | null;
+  uptime_ratio_7d: number | null;
+}
+
+export interface CheckHistoryItem {
+  checked_at: string;
+  status_code: number | null;
+  response_time_ms: number | null;
+  success: boolean;
+  error_message: string | null;
+}
+
+export interface MonitorInput {
+  name: string;
+  url: string;
+  method: HttpMethod;
+  interval_seconds: number;
+  timeout_seconds: number;
+  expected_status_min: number;
+  expected_status_max: number;
+  is_paused: boolean;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -28,4 +80,8 @@ export class ApiError extends Error {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+export function hasFleetSummary(summary: Summary): boolean {
+  return typeof summary.monitors_total === 'number';
 }
