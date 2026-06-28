@@ -1,4 +1,7 @@
 import type {
+  AlertEvent,
+  AlertSettings,
+  AlertSettingsUpdateInput,
   CheckHistoryItem,
   Incident,
   Monitor,
@@ -8,10 +11,13 @@ import type {
   StatusPageComponentInput,
   StatusPageUpdateInput,
   Summary,
+  TestAlertResponse,
 } from '../types';
 import { ApiError } from '../types';
 import { normalizeApiBaseUrl } from '../utils';
 import {
+  parseAlertEvents,
+  parseAlertSettings,
   parseCheckHistory,
   parseIncidents,
   parseMonitor,
@@ -261,6 +267,46 @@ export async function removeMonitorFromComponent(
 export async function fetchPublicStatus(slug: string): Promise<PublicStatusPage> {
   const data = await request<unknown>(`/api/public/v1/status/${encodeURIComponent(slug)}`);
   return parsePublicStatusPage(data);
+}
+
+export async function getAlertSettings(adminApiKey: string | null): Promise<AlertSettings> {
+  const data = await request<unknown>('/api/v1/settings/alerts', {
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseAlertSettings(data);
+}
+
+export async function updateAlertSettings(
+  input: AlertSettingsUpdateInput,
+  adminApiKey: string | null,
+): Promise<AlertSettings> {
+  const data = await request<unknown>('/api/v1/settings/alerts', {
+    method: 'PATCH',
+    body: input,
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseAlertSettings(data);
+}
+
+export async function sendTestAlert(adminApiKey: string | null): Promise<TestAlertResponse> {
+  return request<TestAlertResponse>('/api/v1/settings/alerts/test', {
+    method: 'POST',
+    adminApiKey,
+    requireAuth: true,
+  });
+}
+
+export async function getAlertEvents(
+  adminApiKey: string | null,
+  limit = 50,
+): Promise<AlertEvent[]> {
+  const data = await request<unknown>(`/api/v1/settings/alerts/events?limit=${limit}`, {
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseAlertEvents(data);
 }
 
 export { API_BASE };

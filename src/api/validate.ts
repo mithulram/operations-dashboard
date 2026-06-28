@@ -1,4 +1,6 @@
 import type {
+  AlertEvent,
+  AlertSettings,
   CheckHistoryItem,
   Incident,
   Monitor,
@@ -414,4 +416,80 @@ export function parseStatusPage(data: unknown): AdminStatusPage {
     updated_at: String(data.updated_at),
     components: components.map((item, index) => parseAdminStatusPageComponent(item, index)),
   };
+}
+
+function optionalNullableString(value: unknown): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  return typeof value === 'string' ? value : null;
+}
+
+function optionalNullablePort(value: unknown): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (!isFiniteNumber(value) || value < 1 || value > 65535) {
+    return null;
+  }
+  return value;
+}
+
+export function parseAlertSettings(data: unknown): AlertSettings {
+  if (!isRecord(data)) {
+    throw new ApiError('Invalid alert settings response: expected an object.');
+  }
+
+  if ('smtp_password' in data) {
+    throw new ApiError('Invalid alert settings response: must not include SMTP password.');
+  }
+
+  return {
+    enabled: Boolean(data.enabled),
+    send_resolved: data.send_resolved !== false,
+    smtp_host: optionalNullableString(data.smtp_host),
+    smtp_port: optionalNullablePort(data.smtp_port),
+    smtp_username: optionalNullableString(data.smtp_username),
+    smtp_from: optionalNullableString(data.smtp_from),
+    alert_to: optionalNullableString(data.alert_to),
+    smtp_password_configured: Boolean(data.smtp_password_configured),
+    smtp_configured: Boolean(data.smtp_configured),
+    alerts_ready: Boolean(data.alerts_ready),
+    env_alerts_enabled: Boolean(data.env_alerts_enabled),
+    created_at: String(data.created_at),
+    updated_at: String(data.updated_at),
+  };
+}
+
+export function parseAlertEvents(data: unknown): AlertEvent[] {
+  if (!Array.isArray(data)) {
+    throw new ApiError('Invalid alert events response: expected an array.');
+  }
+
+  return data.map((item, index) => {
+    if (!isRecord(item)) {
+      throw new ApiError(`Invalid alert events response: item at index ${index} must be an object.`);
+    }
+
+    return {
+      id: isNonNegativeInteger(item.id, `events[${index}].id`),
+      monitor_id:
+        item.monitor_id === null || item.monitor_id === undefined
+          ? null
+          : isNonNegativeInteger(item.monitor_id, `events[${index}].monitor_id`),
+      check_result_id:
+        item.check_result_id === null || item.check_result_id === undefined
+          ? null
+          : isNonNegativeInteger(item.check_result_id, `events[${index}].check_result_id`),
+      event_type: String(item.event_type),
+      recipient: String(item.recipient),
+      subject: String(item.subject),
+      success: Boolean(item.success),
+      error_message:
+        item.error_message === null || item.error_message === undefined
+          ? null
+          : String(item.error_message),
+      created_at: String(item.created_at),
+    };
+  });
 }

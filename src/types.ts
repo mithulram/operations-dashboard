@@ -140,3 +140,44 @@ export interface StatusPageComponentInput {
   name: string;
   sort_order?: number;
 }
+
+export interface AlertSettings {
+  enabled: boolean;
+  send_resolved: boolean;
+  smtp_host: string | null;
+  smtp_port: number | null;
+  smtp_username: string | null;
+  smtp_from: string | null;
+  alert_to: string | null;
+  smtp_password_configured: boolean;
+  smtp_configured: boolean;
+  alerts_ready: boolean;
+  env_alerts_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AlertSettingsUpdateInput {
+  enabled?: boolean;
+  send_resolved?: boolean;
+  smtp_from?: string | null;
+  alert_to?: string | null;
+}
+
+export interface AlertEvent {
+  id: number;
+  monitor_id: number | null;
+  check_result_id: number | null;
+  event_type: 'opened' | 'resolved' | 'test' | string;
+  recipient: string;
+  subject: string;
+  success: boolean;
+  error_message: string | null;
+  created_at: string;
+}
+
+export interface TestAlertResponse {
+  status: string;
+  event_id: number;
+  recipient: string;
+}
