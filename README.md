@@ -68,6 +68,7 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite proxies `/api` and `/h
 4. Use **Monitors** to create, edit, pause, delete, and run checks.
 5. Use **Status Page** to configure components/monitors and preview the public page.
 6. Use **Settings → Email alerts** to enable notifications, set the recipient, and send a test email (requires backend SMTP env vars).
+7. Use **Incidents** to review auto-created outages, open incident detail, and acknowledge/resolve/post updates when your admin key is saved.
 
 Never commit the real admin key. Do not put `ADMIN_API_KEY` or SMTP credentials in frontend build environment variables or Cloudflare Pages settings. SMTP secrets (`SMTP_PASSWORD`, etc.) are configured on the backend Render service only.
 
@@ -176,6 +177,11 @@ npm run smoke:deployed  # verify live frontend + API after deploy
 | `GET /api/v1/status-page` | Bearer admin key | Status page builder config |
 | `PATCH /api/v1/status-page` | Bearer admin key | Update status page settings |
 | `POST/PATCH/DELETE /api/v1/status-page/components...` | Bearer admin key | Manage status page components/monitors |
+| `GET /api/v1/incidents` | Public | Incident list |
+| `GET /api/v1/incidents/{id}` | Public | Incident detail |
+| `PATCH /api/v1/incidents/{id}` | Bearer admin key | Acknowledge or resolve |
+| `GET /api/v1/incidents/{id}/updates` | Public | Incident timeline |
+| `POST /api/v1/incidents/{id}/updates` | Bearer admin key | Add timeline note |
 | `GET /api/v1/settings/alerts` | Bearer admin key | Read alert settings (masked; no SMTP password) |
 | `PATCH /api/v1/settings/alerts` | Bearer admin key | Update enabled, recipient, recovery toggle |
 | `POST /api/v1/settings/alerts/test` | Bearer admin key | Send test alert email |
@@ -191,6 +197,14 @@ The **Settings** page includes an **Email alerts** section (admin key required):
 - View config status (`Configured`, `Missing SMTP env on backend`, or `Disabled`)
 
 SMTP credentials are **backend env only** (`SMTP_HOST`, `SMTP_PASSWORD`, etc. on Render). The frontend never stores, sends, or displays SMTP passwords after saving.
+
+### Incident timeline (Incidents page)
+
+- `/incidents` loads the public incidents list (real DB incidents when present, otherwise synthetic demo data).
+- Click a row to open incident detail with timeline updates.
+- With a saved admin key: acknowledge, resolve, and post timeline notes via Bearer auth.
+- Without a key: read-only detail with a locked-action hint.
+- Public status pages show the last five recent incidents from `/api/public/v1/status/{slug}`.
 
 ## Screenshots
 
