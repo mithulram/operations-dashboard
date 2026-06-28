@@ -13,7 +13,12 @@ const API_URL = process.env.API_URL?.trim().replace(/\/+$/, '');
 
 const RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 5000;
-const API_ENDPOINTS = ['/healthz', '/api/v1/summary', '/api/v1/incidents'];
+const API_ENDPOINTS = [
+  '/healthz',
+  '/api/v1/summary',
+  '/api/v1/incidents',
+  '/api/public/v1/status/default',
+];
 
 if (!FRONTEND_URL || !API_URL) {
   console.error('FRONTEND_URL and API_URL are required.');
