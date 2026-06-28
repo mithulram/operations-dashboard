@@ -23,6 +23,15 @@ npm run smoke:deployed
 
 The smoke test checks frontend HTML, backend health/summary/incidents/public status JSON, and CORS.
 
+## Screenshots
+
+| View | Preview |
+|---|---|
+| Dashboard | ![Ops Monitor dashboard](docs/screenshots/dashboard.png) |
+| Monitor management locked state | ![Monitor management locked state](docs/screenshots/monitors-locked.png) |
+| Settings and alert guidance | ![Settings and alert guidance](docs/screenshots/settings-alerts.png) |
+| Public status page | ![Public status page](docs/screenshots/public-status.png) |
+
 ## What you get
 
 - **Monitors** — create, pause, run checks, and inspect history (admin key required)
