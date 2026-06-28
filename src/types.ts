@@ -18,16 +18,44 @@ export interface Summary extends FleetSummaryFields {
 }
 
 export interface Incident {
+  id?: number;
   identifier: string;
+  monitor_id?: number | null;
+  monitor_name?: string | null;
   service: string;
+  title?: string;
   severity: string;
   status: string;
   summary: string;
   started_at: string;
+  acknowledged_at?: string | null;
+  resolved_at?: string | null;
+  auto_created?: boolean;
+}
+
+export interface IncidentUpdate {
+  id: number;
+  incident_id: number;
+  message: string;
+  status: string | null;
+  created_at: string;
+}
+
+export interface IncidentUpdateInput {
+  status?: 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'open' | 'acknowledged' | 'resolved';
+}
+
+export interface PublicRecentIncident {
+  title: string;
+  status: string;
+  severity: string;
+  started_at: string;
+  resolved_at: string | null;
+  updates_count: number;
 }
 
 export type SeverityFilter = 'ALL' | 'SEV-1' | 'SEV-2' | 'SEV-3';
-export type StatusFilter = 'ALL' | 'OPEN' | 'RESOLVED';
+export type StatusFilter = 'ALL' | 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED';
 
 export type MonitorStatus = 'up' | 'down' | 'paused' | 'unknown';
 export type HttpMethod = 'GET' | 'HEAD';
@@ -109,7 +137,7 @@ export interface PublicStatusPage {
   overall_status: PublicStatusLevel;
   updated_at: string;
   components: PublicStatusComponent[];
-  recent_incidents: unknown[];
+  recent_incidents: PublicRecentIncident[];
 }
 
 export interface AdminStatusPageComponent {

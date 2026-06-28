@@ -4,6 +4,8 @@ import type {
   AlertSettingsUpdateInput,
   CheckHistoryItem,
   Incident,
+  IncidentUpdate,
+  IncidentUpdateInput,
   Monitor,
   MonitorInput,
   PublicStatusPage,
@@ -20,6 +22,8 @@ import {
   parseAlertSettings,
   parseCheckHistory,
   parseIncidents,
+  parseIncidentDetail,
+  parseIncidentUpdates,
   parseMonitor,
   parseMonitors,
   parsePublicStatusPage,
@@ -99,6 +103,50 @@ export async function fetchSummary(): Promise<Summary> {
 export async function fetchIncidents(): Promise<Incident[]> {
   const data = await request<unknown>('/api/v1/incidents');
   return parseIncidents(data);
+}
+
+export async function getIncident(id: number): Promise<Incident> {
+  const data = await request<unknown>(`/api/v1/incidents/${id}`);
+  return parseIncidentDetail(data);
+}
+
+export async function updateIncident(
+  id: number,
+  input: IncidentUpdateInput,
+  adminApiKey: string | null,
+): Promise<Incident> {
+  const data = await request<unknown>(`/api/v1/incidents/${id}`, {
+    method: 'PATCH',
+    body: input,
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseIncidentDetail(data);
+}
+
+export async function getIncidentUpdates(
+  id: number,
+  adminApiKey?: string | null,
+): Promise<IncidentUpdate[]> {
+  const data = await request<unknown>(`/api/v1/incidents/${id}/updates`, {
+    adminApiKey: adminApiKey ?? null,
+  });
+  return parseIncidentUpdates(data);
+}
+
+export async function addIncidentUpdate(
+  id: number,
+  message: string,
+  adminApiKey: string | null,
+): Promise<IncidentUpdate> {
+  const data = await request<unknown>(`/api/v1/incidents/${id}/updates`, {
+    method: 'POST',
+    body: { message },
+    adminApiKey,
+    requireAuth: true,
+  });
+  const updates = parseIncidentUpdates([data]);
+  return updates[0];
 }
 
 export async function fetchDashboardData(): Promise<{ summary: Summary; incidents: Incident[] }> {

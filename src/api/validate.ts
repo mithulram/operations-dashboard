@@ -3,8 +3,10 @@ import type {
   AlertSettings,
   CheckHistoryItem,
   Incident,
+  IncidentUpdate,
   Monitor,
   MonitorStatus,
+  PublicRecentIncident,
   PublicStatusComponent,
   PublicStatusLevel,
   PublicStatusMonitor,
@@ -16,7 +18,7 @@ import type {
 import { ApiError } from '../types';
 
 const KNOWN_SEVERITIES = new Set(['SEV-1', 'SEV-2', 'SEV-3']);
-const KNOWN_INCIDENT_STATUSES = new Set(['OPEN', 'RESOLVED']);
+const KNOWN_INCIDENT_STATUSES = new Set(['OPEN', 'ACKNOWLEDGED', 'RESOLVED']);
 const KNOWN_MONITOR_STATUSES = new Set<MonitorStatus>(['up', 'down', 'paused', 'unknown']);
 const KNOWN_HTTP_METHODS = new Set(['GET', 'HEAD']);
 const KNOWN_PUBLIC_STATUS_LEVELS = new Set<PublicStatusLevel>([
@@ -162,13 +164,85 @@ function parseIncident(data: unknown, index: number): Incident {
     );
   }
 
+  const id = data.id;
   return {
+    id: id === undefined || id === null ? undefined : isNonNegativeInteger(id, 'id'),
     identifier,
+    monitor_id:
+      data.monitor_id === null || data.monitor_id === undefined
+        ? null
+        : isNonNegativeInteger(data.monitor_id, 'monitor_id'),
+    monitor_name:
+      data.monitor_name === null || data.monitor_name === undefined
+        ? null
+        : String(data.monitor_name),
     service,
+    title: isNonEmptyString(data.title) ? data.title : undefined,
     severity,
     status,
     summary,
     started_at,
+    acknowledged_at:
+      data.acknowledged_at === null || data.acknowledged_at === undefined
+        ? null
+        : String(data.acknowledged_at),
+    resolved_at:
+      data.resolved_at === null || data.resolved_at === undefined
+        ? null
+        : String(data.resolved_at),
+    auto_created: data.auto_created === undefined ? undefined : Boolean(data.auto_created),
+  };
+}
+
+export function parseIncidentDetail(data: unknown): Incident {
+  const incident = parseIncident(data, 0);
+  if (incident.id === undefined) {
+    throw new ApiError('Invalid incident response: missing id.');
+  }
+  return incident;
+}
+
+export function parseIncidentUpdates(data: unknown): IncidentUpdate[] {
+  if (!Array.isArray(data)) {
+    throw new ApiError('Invalid incident updates response: expected an array.');
+  }
+
+  return data.map((item, index) => {
+    if (!isRecord(item)) {
+      throw new ApiError(`Invalid incident updates response: item at index ${index} must be an object.`);
+    }
+
+    return {
+      id: isNonNegativeInteger(item.id, `updates[${index}].id`),
+      incident_id: isNonNegativeInteger(item.incident_id, `updates[${index}].incident_id`),
+      message: String(item.message),
+      status:
+        item.status === null || item.status === undefined ? null : String(item.status),
+      created_at: String(item.created_at),
+    };
+  });
+}
+
+function parsePublicRecentIncident(data: unknown, index: number): PublicRecentIncident {
+  if (!isRecord(data)) {
+    throw new ApiError(`Invalid status page response: recent incident at index ${index} must be an object.`);
+  }
+
+  const started_at = data.started_at;
+  if (!isNonEmptyString(started_at) || !isValidIsoDate(started_at)) {
+    throw new ApiError('Invalid status page response: recent incident started_at is invalid.');
+  }
+
+  return {
+    title: isNonEmptyString(data.title) ? data.title : 'Incident',
+    status: isNonEmptyString(data.status) ? data.status : 'OPEN',
+    severity: isNonEmptyString(data.severity) ? data.severity : 'SEV-2',
+    started_at,
+    resolved_at:
+      data.resolved_at === null || data.resolved_at === undefined
+        ? null
+        : String(data.resolved_at),
+    updates_count: isNonNegativeInteger(data.updates_count ?? 0, 'updates_count'),
   };
 }
 
@@ -368,7 +442,9 @@ export function parsePublicStatusPage(data: unknown): PublicStatusPage {
     overall_status: parsePublicStatusLevel(data.overall_status, 'overall_status'),
     updated_at,
     components: components.map((item, index) => parsePublicStatusComponent(item, index)),
-    recent_incidents: Array.isArray(data.recent_incidents) ? data.recent_incidents : [],
+    recent_incidents: Array.isArray(data.recent_incidents)
+      ? data.recent_incidents.map((item, index) => parsePublicRecentIncident(item, index))
+      : [],
   };
 }
 
