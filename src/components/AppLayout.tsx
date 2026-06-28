@@ -5,6 +5,7 @@ const navItems: Array<{ to: string; label: string; end?: boolean }> = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/monitors', label: 'Monitors' },
   { to: '/incidents', label: 'Incidents' },
+  { to: '/status-page', label: 'Status Page' },
   { to: '/settings', label: 'Settings' },
 ];
 
