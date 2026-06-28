@@ -8,6 +8,7 @@ import {
 } from '../api/client';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { LockedState } from '../components/LockedState';
+import { MonitorsEmptyState } from '../components/MonitorsEmptyState';
 import {
   MonitorFormModal,
   monitorToFormValues,
@@ -123,7 +124,9 @@ export function MonitorsPage() {
     : undefined;
 
   if (!isConfigured) {
-    return <LockedState />;
+    return (
+      <LockedState message="The dashboard and public status page stay readable without a key. Paste your backend ADMIN_API_KEY in Settings to create monitors, run checks, and delete monitors." />
+    );
   }
 
   return (
@@ -150,7 +153,12 @@ export function MonitorsPage() {
       {loading ? (
         <p className="empty-state">Loading monitors…</p>
       ) : monitors.length === 0 ? (
-        <p className="empty-state">No monitors yet. Add your first URL monitor to start tracking uptime.</p>
+        <MonitorsEmptyState
+          onAddMonitor={() => {
+            setEditingMonitor(null);
+            setModalOpen(true);
+          }}
+        />
       ) : (
         <MonitorList
           monitors={monitors}

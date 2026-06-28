@@ -13,6 +13,7 @@ import {
 import { ErrorBanner } from '../components/ErrorBanner';
 import { LockedState } from '../components/LockedState';
 import { PublicStatusView } from '../components/PublicStatusView';
+import { StatusPageSetupGuide } from '../components/StatusPageSetupGuide';
 import { useAdminKey } from '../context/AdminKeyContext';
 import type { AdminStatusPage, Monitor, PublicStatusPage } from '../types';
 import { ApiError } from '../types';
@@ -146,8 +147,16 @@ export function StatusPageAdminPage() {
   }
 
   if (!isConfigured) {
-    return <LockedState title="Status page builder is locked" />;
+    return (
+      <LockedState
+        title="Status page builder is locked"
+        message="The public status page at /status/default stays readable without a key. Connect your admin key in Settings to assign monitors and edit page content."
+      />
+    );
   }
+
+  const hasAssignments =
+    statusPage?.components.some((component) => component.monitor_ids.length > 0) ?? false;
 
   return (
     <section className="panel-section" aria-label="Status page builder">
@@ -167,6 +176,8 @@ export function StatusPageAdminPage() {
       ) : (
         statusPage && (
           <>
+            <StatusPageSetupGuide hasMonitors={monitors.length > 0} hasAssignments={hasAssignments} />
+
             <div className="settings-panel">
               <form className="settings-form" onSubmit={(event) => void handleSaveTitle(event)}>
                 <label htmlFor="status-page-title">Title</label>

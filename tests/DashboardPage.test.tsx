@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setAdminApiKey, clearAdminApiKey } from '../src/auth/adminKey';
 import { DashboardPage } from '../src/pages/DashboardPage';
 import type { Incident, Summary } from '../src/types';
+import { renderWithProviders } from './testUtils';
 
 const baseSummary: Summary = {
   requests_total: 400,
@@ -40,11 +41,13 @@ function mockFetch(summary: Summary) {
 
 describe('DashboardPage', () => {
   beforeEach(() => {
+    clearAdminApiKey();
     vi.stubGlobal('fetch', mockFetch(baseSummary));
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    clearAdminApiKey();
   });
 
   it('renders fleet summary cards when fleet fields are present', async () => {
@@ -61,11 +64,7 @@ describe('DashboardPage', () => {
       }),
     );
 
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
-    );
+    renderWithProviders(<DashboardPage />, { route: '/' });
 
     await waitFor(() => {
       expect(screen.getByLabelText('Monitor fleet summary')).toBeInTheDocument();
@@ -74,14 +73,11 @@ describe('DashboardPage', () => {
     expect(screen.getByText('4')).toBeInTheDocument();
     expect(screen.getByText('142 ms')).toBeInTheDocument();
     expect(screen.queryByLabelText('Service health summary')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Getting started')).not.toBeInTheDocument();
   });
 
   it('falls back to legacy summary cards when fleet fields are missing', async () => {
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
-    );
+    renderWithProviders(<DashboardPage />, { route: '/' });
 
     await waitFor(() => {
       expect(screen.getByLabelText('Service health summary')).toBeInTheDocument();
@@ -89,5 +85,65 @@ describe('DashboardPage', () => {
 
     expect(screen.getByText('99.75%')).toBeInTheDocument();
     expect(screen.queryByLabelText('Monitor fleet summary')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Getting started')).not.toBeInTheDocument();
+  });
+
+  it('shows first-run onboarding when monitors_total is zero', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockFetch({
+        ...baseSummary,
+        monitors_total: 0,
+        monitors_up: 0,
+        monitors_down: 0,
+        monitors_paused: 0,
+        monitors_unknown: 0,
+        average_response_time_ms_24h: null,
+      }),
+    );
+
+    renderWithProviders(<DashboardPage />, { route: '/' });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Getting started')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Get started with Ops Monitor')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Connect admin key in Settings' })).toHaveAttribute(
+      'href',
+      '/settings',
+    );
+    expect(screen.getByRole('link', { name: 'Open public status page' })).toHaveAttribute(
+      'href',
+      '/status/default',
+    );
+  });
+
+  it('routes onboarding primary CTA to Monitors when admin key is saved', async () => {
+    setAdminApiKey('test-admin-key');
+    vi.stubGlobal(
+      'fetch',
+      mockFetch({
+        ...baseSummary,
+        monitors_total: 0,
+        monitors_up: 0,
+        monitors_down: 0,
+        monitors_paused: 0,
+        monitors_unknown: 0,
+      }),
+    );
+
+    renderWithProviders(<DashboardPage />, { route: '/' });
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Add your first monitor' })).toHaveAttribute(
+        'href',
+        '/monitors',
+      );
+    });
+
+    expect(
+      screen.getByText(/Your admin key is connected. Add a monitor to begin tracking uptime/),
+    ).toBeInTheDocument();
   });
 });

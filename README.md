@@ -77,6 +77,16 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite proxies `/api` and `/h
 
 Never commit the real admin key. Do not put `ADMIN_API_KEY` or SMTP credentials in Cloudflare build settings.
 
+## First-run workflow
+
+1. Open the **Dashboard** — if no monitors exist yet, a getting-started panel explains the setup path.
+2. Go to **Settings** and paste your backend `ADMIN_API_KEY` (browser-local only, not a build env var).
+3. Open **Monitors** and create your first URL monitor.
+4. Click **Run check** on the monitor to confirm the endpoint responds.
+5. Open **Status Page**, assign the monitor to a component, and preview `/status/default`.
+
+Public dashboard summary and the status page remain readable before you connect an admin key.
+
 ## Deploy the frontend (Cloudflare Pages)
 
 Cloudflare Pages is **not GitHub-connected** for this project. After pushing to `main`, deploy with GitHub Actions or locally.

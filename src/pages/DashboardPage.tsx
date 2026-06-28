@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchDashboardData } from '../api/client';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { FilterBar } from '../components/FilterBar';
+import { FirstRunOnboarding } from '../components/FirstRunOnboarding';
 import { FleetSummaryCards } from '../components/FleetSummaryCards';
 import { IncidentsTable } from '../components/IncidentsTable';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { SummaryCards } from '../components/SummaryCards';
+import { useAdminKey } from '../context/AdminKeyContext';
 import type { Incident, SeverityFilter, StatusFilter, Summary } from '../types';
 import { hasFleetSummary } from '../types';
 
@@ -24,6 +26,7 @@ function filterIncidents(
 }
 
 export function DashboardPage() {
+  const { isConfigured } = useAdminKey();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +73,9 @@ export function DashboardPage() {
     [incidents, severity, status],
   );
 
+  const showFirstRunOnboarding =
+    summary !== null && hasFleetSummary(summary) && summary.monitors_total === 0;
+
   return (
     <>
       {error && <ErrorBanner message={error} onRetry={() => void loadData({ showLoading: true })} />}
@@ -79,6 +85,10 @@ export function DashboardPage() {
       ) : (
         summary && (
           <>
+            {showFirstRunOnboarding && (
+              <FirstRunOnboarding isAdminConnected={isConfigured} />
+            )}
+
             {hasFleetSummary(summary) ? (
               <FleetSummaryCards summary={summary} />
             ) : (

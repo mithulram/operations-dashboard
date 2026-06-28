@@ -40,7 +40,31 @@ function createStatusFetchMock() {
 
     if (url.includes('/api/v1/monitors') && !url.includes('/checks')) {
       expect(init?.headers).toMatchObject({ Authorization: 'Bearer test-admin-key' });
-      return { ok: true, json: async () => [] };
+      return {
+        ok: true,
+        json: async () => [
+          {
+            id: 7,
+            name: 'Render health',
+            url: 'https://example.com/healthz',
+            method: 'GET',
+            interval_seconds: 60,
+            timeout_seconds: 5,
+            expected_status_min: 200,
+            expected_status_max: 399,
+            is_paused: false,
+            created_at: '2026-06-19T08:14:00Z',
+            updated_at: '2026-06-19T08:14:00Z',
+            last_check_at: null,
+            last_status: 'unknown',
+            last_status_code: null,
+            last_response_time_ms: null,
+            consecutive_failures: 0,
+            uptime_ratio_24h: null,
+            uptime_ratio_7d: null,
+          },
+        ],
+      };
     }
 
     throw new Error(`Unexpected fetch URL: ${url}`);
@@ -69,5 +93,18 @@ describe('StatusPageAdminPage', () => {
 
     expect(screen.getByDisplayValue('Core services')).toBeInTheDocument();
     expect(screen.getByText('Public preview')).toBeInTheDocument();
+  });
+
+  it('shows setup guide when no monitors are assigned', async () => {
+    setAdminApiKey('test-admin-key');
+    vi.stubGlobal('fetch', createStatusFetchMock());
+
+    renderWithProviders(<StatusPageAdminPage />, { route: '/status-page' });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Status page setup')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/none are assigned yet/i)).toBeInTheDocument();
   });
 });

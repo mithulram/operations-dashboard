@@ -10,7 +10,8 @@ describe('SettingsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<SettingsPage />, { route: '/settings' });
 
-    expect(screen.getByText('Read-only mode')).toBeInTheDocument();
+    expect(screen.getByText('Disconnected — read-only mode')).toBeInTheDocument();
+    expect(screen.getByText(/stored only in this browser/i)).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Admin API key'), 'super-secret-admin-key-1234');
     await user.click(screen.getByRole('button', { name: 'Save key' }));
@@ -18,12 +19,13 @@ describe('SettingsPage', () => {
     expect(getAdminApiKey()).toBe('super-secret-admin-key-1234');
     expect(screen.queryByDisplayValue('super-secret-admin-key-1234')).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Saved admin key ••••1234');
-    expect(screen.getByText(/A key is saved locally \(••••1234\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Key saved in this browser only \(••••1234\)/)).toBeInTheDocument();
+    expect(screen.queryByText('super-secret-admin-key-1234')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Clear key' }));
 
     expect(getAdminApiKey()).toBeNull();
-    expect(screen.getByText('Read-only mode')).toBeInTheDocument();
+    expect(screen.getByText('Disconnected — read-only mode')).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Admin key cleared');
   });
 });

@@ -75,7 +75,30 @@ describe('MonitorsPage', () => {
     renderWithProviders(<MonitorsPage />, { route: '/monitors' });
 
     expect(screen.getByText('Monitor management is locked')).toBeInTheDocument();
+    expect(screen.getByText(/public status page stay readable without a key/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add monitor' })).not.toBeInTheDocument();
+  });
+
+  it('shows guided empty state when authenticated with no monitors', async () => {
+    setAdminApiKey('test-admin-key');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/api/v1/monitors') && !url.includes('/checks')) {
+          return { ok: true, json: async () => [] };
+        }
+        throw new Error(`Unexpected fetch URL: ${url}`);
+      }),
+    );
+
+    renderWithProviders(<MonitorsPage />, { route: '/monitors' });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('No monitors')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: 'Add your first monitor' })).toBeInTheDocument();
   });
 
   it('renders mocked monitors when authenticated', async () => {

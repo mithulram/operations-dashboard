@@ -30,22 +30,33 @@ export function SettingsPage() {
       <div className="panel-section__header">
         <h2>Settings</h2>
         <p className="panel-section__hint">
-          Store your backend admin API key locally in this browser only. It is never sent to the
-          frontend host and is not included in the build.
+          Connect your backend admin API key for monitor and status-page management. The key is stored
+          only in this browser&apos;s localStorage — never on the frontend host, never in build env,
+          and never sent to Cloudflare or other static hosts.
         </p>
       </div>
 
       <div className={`settings-status ${isConfigured ? 'settings-status--connected' : 'settings-status--locked'}`}>
-        <strong>{isConfigured ? 'Admin connected' : 'Read-only mode'}</strong>
+        <div className="settings-status__label">
+          <span
+            className={`settings-status__dot ${isConfigured ? 'settings-status__dot--connected' : 'settings-status__dot--disconnected'}`}
+            aria-hidden="true"
+          />
+          <strong>{isConfigured ? 'Admin connected' : 'Disconnected — read-only mode'}</strong>
+        </div>
         <p>
           {isConfigured
-            ? `A key is saved locally (${maskAdminApiKey(adminApiKey ?? '')}). Protected monitor routes will include Authorization: Bearer.`
-            : 'Public summary and incident endpoints remain available without a key.'}
+            ? `Key saved in this browser only (${maskAdminApiKey(adminApiKey ?? '')}). Protected routes send Authorization: Bearer.`
+            : 'Public dashboard summary, incidents, and /status/default remain available without a key.'}
         </p>
       </div>
 
       <form className="settings-form" onSubmit={handleSubmit}>
         <label htmlFor="admin-api-key">Admin API key</label>
+        <p className="settings-form__help">
+          Paste the ADMIN_API_KEY from your backend deployment. The full value is never shown after
+          saving.
+        </p>
         <input
           id="admin-api-key"
           name="admin-api-key"
