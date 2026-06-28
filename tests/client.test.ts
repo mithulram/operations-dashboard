@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildApiUrl,
+  fetchPublicStatus,
   fetchSummary,
   getMonitors,
+  getStatusPage,
   runMonitorCheck,
 } from '../src/api/client';
 import { normalizeApiBaseUrl } from '../src/utils';
@@ -110,5 +112,49 @@ describe('protected API client auth headers', () => {
 
     await expect(getMonitors(null)).rejects.toThrow(/Admin API key is required/);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not send Authorization for public status fetch', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      expect(init?.headers).not.toMatchObject({ Authorization: expect.any(String) });
+      return {
+        ok: true,
+        json: async () => ({
+          title: 'Service Status',
+          slug: 'default',
+          overall_status: 'unknown',
+          updated_at: '2026-06-19T08:14:00Z',
+          components: [],
+          recent_incidents: [],
+        }),
+      };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchPublicStatus('default');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends Authorization for protected status page admin calls', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      expect(init?.headers).toMatchObject({ Authorization: 'Bearer secret-key' });
+      return {
+        ok: true,
+        json: async () => ({
+          id: 1,
+          slug: 'default',
+          title: 'Service Status',
+          is_public: true,
+          show_response_times: true,
+          created_at: '2026-06-19T08:14:00Z',
+          updated_at: '2026-06-19T08:14:00Z',
+          components: [],
+        }),
+      };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await getStatusPage('secret-key');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

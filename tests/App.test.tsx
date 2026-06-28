@@ -109,6 +109,7 @@ describe('App', () => {
       expect(screen.getByLabelText('Service health summary')).toBeInTheDocument();
     });
 
+    expect(screen.getByRole('link', { name: 'Status Page' })).toBeInTheDocument();
     expect(screen.getByText('99.75%')).toBeInTheDocument();
     expect(screen.getByText('INC-1042')).toBeInTheDocument();
     expect(screen.queryByLabelText('Loading dashboard data')).not.toBeInTheDocument();
