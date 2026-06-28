@@ -1,17 +1,18 @@
-# Operations Dashboard
+# Ops Monitor Dashboard
 
-A production-style React operations app for fleet health, persisted URL monitors, public status pages, and incident context. It consumes the live [Service Health & Incident Monitor](https://github.com/mithulram/service-health-incident-monitor) backend (portfolio project #4).
+A **free-first monitoring UI** for solo developers, open-source maintainers, and small teams. Manage URL monitors, review automatic incidents, configure email alerts, and publish a public status page — all against the [Service Health & Incident Monitor](https://github.com/mithulram/service-health-incident-monitor) API.
 
-Public summary, incident, and status page endpoints remain readable without credentials. Monitor and status-page management routes are protected on the backend with `ADMIN_API_KEY`; this UI stores that key locally in the browser and sends `Authorization: Bearer <key>` only for protected requests.
+This frontend is designed to pair with the backend. Self-host both in about ten minutes using Docker Compose (backend) and `npm run dev` (frontend).
 
 ## Live demo
 
 | Service | URL |
 |---|---|
+| Dashboard | https://operations-dashboard-b8v.pages.dev |
+| Public status page | https://operations-dashboard-b8v.pages.dev/status/default |
 | Backend API | https://service-health-incident-monitor.onrender.com |
-| Frontend dashboard | https://operations-dashboard-b8v.pages.dev |
 
-Verify the deployed public dashboard + API (requires Node 22+):
+Verify the deployed stack (Node 22+):
 
 ```bash
 nvm use
@@ -20,204 +21,104 @@ API_URL=https://service-health-incident-monitor.onrender.com \
 npm run smoke:deployed
 ```
 
-The smoke test checks public HTML, health/summary/incidents endpoints, and CORS. It does not exercise protected monitor management because no admin key is available in CI or smoke scripts.
+The smoke test checks frontend HTML, backend health/summary/incidents/public status JSON, and CORS.
 
-![Operations dashboard — desktop](docs/screenshots/dashboard-desktop.png)
+## What you get
 
-## Problem statement
+- **Monitors** — create, pause, run checks, and inspect history (admin key required)
+- **Incidents** — automatic outage incidents with timeline, acknowledge, resolve, and notes
+- **Alerts** — email alert settings UI (SMTP secrets stay on the backend)
+- **Status page builder** — configure components/monitors and preview `/status/{slug}`
+- **Public status pages** — shareable read-only status for your users
+- **Dashboard** — fleet summary cards and recent incidents with filters
 
-Platform and SRE teams routinely juggle separate tools for uptime checks, fleet health, and incident context. This project shows a focused operations product UI that combines fleet monitor status, check history, synthetic SLO signals, and incident metadata in one responsive, accessible app with filtering, loading states, and automatic refresh on the dashboard.
+## Quick start (local)
 
-## Prerequisites
+### 1. Start the backend
 
-- **Node.js 22+** (see `.nvmrc`). With [nvm](https://github.com/nvm-sh/nvm): `nvm use`
-- npm (bundled with Node)
-
-## Quick start
-
-Start the backend first (project #4):
+Recommended: Docker Compose from the backend repo (~10 minutes):
 
 ```bash
 git clone https://github.com/mithulram/service-health-incident-monitor.git
 cd service-health-incident-monitor
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e '.[test]'
-DEMO_MODE=true uvicorn service_monitor.app:app --host 127.0.0.1 --port 8090
+cp .env.example .env
+# Set ADMIN_API_KEY in .env
+docker compose up -d --build
 ```
 
-For local monitor management against a protected backend, run the backend with a known `ADMIN_API_KEY` instead of `DEMO_MODE=true`.
+Or run locally with Python — see the [backend README](https://github.com/mithulram/service-health-incident-monitor).
 
-Then run the dashboard:
+### 2. Start this dashboard
 
 ```bash
 git clone https://github.com/mithulram/operations-dashboard.git
 cd operations-dashboard
 nvm use
 npm ci
-npm run dev
+VITE_API_BASE_URL=http://127.0.0.1:8090 npm run dev
 ```
 
-Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite proxies `/api` and `/healthz` to `http://127.0.0.1:8090` during development.
+Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite proxies `/api` and `/healthz` when `VITE_API_BASE_URL` is unset; set it explicitly when pointing at Docker or a remote backend.
 
-### Admin API key (local only)
+### 3. Connect admin access
 
-1. Open **Settings** in the dashboard.
-2. Paste the backend `ADMIN_API_KEY` value.
-3. Save. The key is stored in this browser's `localStorage` only.
-4. Use **Monitors** to create, edit, pause, delete, and run checks.
-5. Use **Status Page** to configure components/monitors and preview the public page.
-6. Use **Settings → Email alerts** to enable notifications, set the recipient, and send a test email (requires backend SMTP env vars).
-7. Use **Incidents** to review auto-created outages, open incident detail, and acknowledge/resolve/post updates when your admin key is saved.
+1. Open **Settings**
+2. Paste the backend `ADMIN_API_KEY`
+3. Save — the key stays in browser `localStorage` only
 
-Never commit the real admin key. Do not put `ADMIN_API_KEY` or SMTP credentials in frontend build environment variables or Cloudflare Pages settings. SMTP secrets (`SMTP_PASSWORD`, etc.) are configured on the backend Render service only.
+Never commit the real admin key. Do not put `ADMIN_API_KEY` or SMTP credentials in Cloudflare build settings.
 
-### Public status page
+## Deploy the frontend (Cloudflare Pages)
 
-- Admin builder: `/status-page` (requires saved admin key)
-- Public view: `/status/default` (no admin nav, no auth)
-
-Example public URL after deploy:
-
-`https://operations-dashboard-b8v.pages.dev/status/default`
-
-### Manual Cloudflare deploy
-
-Cloudflare Pages is not GitHub-connected for this project. After pushing frontend changes to `main`, deploy manually:
+Cloudflare Pages is **not GitHub-connected** for this project. After pushing to `main`, deploy manually:
 
 ```bash
 VITE_API_BASE_URL=https://service-health-incident-monitor.onrender.com npm run build
 npx wrangler pages deploy dist --project-name=operations-dashboard --branch=main
 ```
 
-Do not set `ADMIN_API_KEY` in Cloudflare build settings.
+Set the backend `WEB_CORS_ORIGINS` to your Cloudflare origin (for example `https://operations-dashboard-b8v.pages.dev`).
 
-### Environment
+## Environment
 
 | Variable | Purpose |
 |---|---|
-| `VITE_API_BASE_URL` | Optional API origin. Leave empty to use relative paths via the Vite dev proxy or same-origin deployment. Trailing slashes are normalized automatically. |
+| `VITE_API_BASE_URL` | Backend API origin. Empty uses Vite dev proxy or same-origin deployment. |
 
-Example for a deployed API:
-
-```bash
-VITE_API_BASE_URL=https://monitor.example.com npm run build
-```
-
-## Deploy for free
-
-Recommended setup:
-
-| Layer | Host | Notes |
-|---|---|---|
-| Backend | [Render](https://render.com) Free Web Service | Deploy [service-health-incident-monitor](https://github.com/mithulram/service-health-incident-monitor) first |
-| Frontend | [Cloudflare Pages](https://pages.cloudflare.com) or Render Static Site | Node 22, build `dist` output |
-
-**Frontend build settings**
-
-| Setting | Value |
-|---|---|
-| Build command | `npm ci && npm run build` |
-| Output directory | `dist` |
-| Node version | `22` |
-| `VITE_API_BASE_URL` | `https://<render-backend>.onrender.com` |
-
-Do **not** set `ADMIN_API_KEY` in the frontend build. Users enter it in Settings after deployment.
-
-**Deployment order**
-
-1. Deploy the backend and note its `https://*.onrender.com` URL.
-2. Deploy this frontend with `VITE_API_BASE_URL` set to that backend URL.
-3. Update the backend `WEB_CORS_ORIGINS` environment variable with the final frontend origin (for example `https://operations-dashboard-b8v.pages.dev`).
-4. Redeploy the backend so CORS allows the dashboard origin.
-5. Run the deployed smoke test (Node 22+ required):
+Example:
 
 ```bash
-nvm use
-FRONTEND_URL=https://your-dashboard.pages.dev \
-API_URL=https://your-monitor.onrender.com \
-npm run smoke:deployed
+VITE_API_BASE_URL=https://your-monitor.example.com npm run build
 ```
 
 ## Scripts
 
 ```bash
-nvm use               # use Node 22+ from .nvmrc
-npm ci                # install dependencies from package-lock.json
-npm run dev           # start Vite dev server with API proxy
-npm test              # run Vitest component tests
-npm run build         # type-check and produce production build
-npm run smoke:deployed  # verify live frontend + API after deploy
+nvm use               # Node 22+ from .nvmrc
+npm ci                # install dependencies
+npm run dev           # local dev server
+npm test              # Vitest component tests
+npm run build         # production build
+npm run smoke:deployed  # verify live frontend + API
 ```
 
-## Architecture
+## Security
 
-- **React + TypeScript + Vite + react-router-dom** for a typed SPA with Dashboard, Monitors, Incidents, Status Page, Settings, and public `/status/:slug` views.
-- **`src/api/client.ts`** — typed `fetch` wrapper with public and protected monitor endpoints.
-- **`src/auth/adminKey.ts`** — localStorage helpers for the user-entered admin key.
-- **`src/context/AdminKeyContext.tsx`** — shared auth state for monitor management.
-- **Components** — fleet summary cards, monitor list with check history, settings panel, filter bar, incidents table, loading skeleton, and error banner with retry.
-- **Accessibility** — semantic landmarks, `aria-live` regions, keyboard-friendly controls, and table captions.
-- **CI** — GitHub Actions runs `npm ci`, `npm test`, and `npm run build` on every push.
+- Admin key is entered in **Settings** and stored locally in the browser only
+- SMTP passwords and alert secrets are configured on the backend host, never in this UI build
+- Public routes (`/status/:slug`, dashboard summary/incidents read paths) work without a key
 
-## API contract
+## Honest limitations
 
-| Endpoint | Auth | Used for |
-|---|---|---|
-| `GET /healthz` | Public | Liveness check |
-| `GET /api/v1/summary` | Public | Fleet monitor counts, synthetic SLO metrics, open incident count |
-| `GET /api/v1/incidents` | Public | Incident list with severity, status, and timestamps |
-| `GET /api/v1/monitors` | Bearer admin key | Monitor list |
-| `POST /api/v1/monitors` | Bearer admin key | Create monitor |
-| `PATCH /api/v1/monitors/{id}` | Bearer admin key | Update or pause monitor |
-| `DELETE /api/v1/monitors/{id}` | Bearer admin key | Delete monitor |
-| `POST /api/v1/checks/run/{id}` | Bearer admin key | Run check now |
-| `GET /api/v1/monitors/{id}/checks` | Bearer admin key | Recent check history |
-| `GET /api/public/v1/status/{slug}` | Public | Public status page JSON |
-| `GET /api/v1/status-page` | Bearer admin key | Status page builder config |
-| `PATCH /api/v1/status-page` | Bearer admin key | Update status page settings |
-| `POST/PATCH/DELETE /api/v1/status-page/components...` | Bearer admin key | Manage status page components/monitors |
-| `GET /api/v1/incidents` | Public | Incident list |
-| `GET /api/v1/incidents/{id}` | Public | Incident detail |
-| `PATCH /api/v1/incidents/{id}` | Bearer admin key | Acknowledge or resolve |
-| `GET /api/v1/incidents/{id}/updates` | Public | Incident timeline |
-| `POST /api/v1/incidents/{id}/updates` | Bearer admin key | Add timeline note |
-| `GET /api/v1/settings/alerts` | Bearer admin key | Read alert settings (masked; no SMTP password) |
-| `PATCH /api/v1/settings/alerts` | Bearer admin key | Update enabled, recipient, recovery toggle |
-| `POST /api/v1/settings/alerts/test` | Bearer admin key | Send test alert email |
-| `GET /api/v1/settings/alerts/events` | Bearer admin key | Recent alert delivery events |
+- Requires the companion backend — not a standalone monitoring server
+- No built-in user accounts; one shared admin key per deployment
+- Email alerts depend on backend SMTP env configuration
+- Not an enterprise on-call platform (no Slack/PagerDuty/escalation yet)
 
-### Email alerts (Settings)
+## Backend repos
 
-The **Settings** page includes an **Email alerts** section (admin key required):
-
-- Toggle alerts and recovery notifications
-- Set recipient and from address (non-secret fields)
-- Send a test email and review recent delivery events
-- View config status (`Configured`, `Missing SMTP env on backend`, or `Disabled`)
-
-SMTP credentials are **backend env only** (`SMTP_HOST`, `SMTP_PASSWORD`, etc. on Render). The frontend never stores, sends, or displays SMTP passwords after saving.
-
-### Incident timeline (Incidents page)
-
-- `/incidents` loads the public incidents list (real DB incidents when present, otherwise synthetic demo data).
-- Click a row to open incident detail with timeline updates.
-- With a saved admin key: acknowledge, resolve, and post timeline notes via Bearer auth.
-- Without a key: read-only detail with a locked-action hint.
-- Public status pages show the last five recent incidents from `/api/public/v1/status/{slug}`.
-
-## Screenshots
-
-| View | File |
-|---|---|
-| Desktop | `docs/screenshots/dashboard-desktop.png` |
-| Mobile | `docs/screenshots/dashboard-mobile.png` |
-
-Capture after starting the Service Health backend and `npm run dev`.
-
-## Resume-ready description
-
-> Built a TypeScript/React operations product UI with react-router navigation, local admin-key auth for protected APIs, monitor CRUD with check history, a public status page builder/view, incident filtering, accessible loading/retry states, Vitest coverage, and GitHub Actions CI against a live Render backend.
+- API: [service-health-incident-monitor](https://github.com/mithulram/service-health-incident-monitor)
+- UI: this repository
 
 ## License
 
