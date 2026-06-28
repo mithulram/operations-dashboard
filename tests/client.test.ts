@@ -3,9 +3,13 @@ import {
   buildApiUrl,
   fetchPublicStatus,
   fetchSummary,
+  getAlertEvents,
+  getAlertSettings,
   getMonitors,
   getStatusPage,
   runMonitorCheck,
+  sendTestAlert,
+  updateAlertSettings,
 } from '../src/api/client';
 import { normalizeApiBaseUrl } from '../src/utils';
 
@@ -156,5 +160,46 @@ describe('protected API client auth headers', () => {
 
     await getStatusPage('secret-key');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends Authorization for alert settings calls', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      expect(init?.headers).toMatchObject({ Authorization: 'Bearer secret-key' });
+      const url = String(input);
+      if (url.includes('/events')) {
+        return { ok: true, json: async () => [] };
+      }
+      if (url.includes('/test')) {
+        return { ok: true, json: async () => ({ status: 'sent', event_id: 1, recipient: 'ops@example.com' }) };
+      }
+      if (url.includes('/settings/alerts')) {
+        return {
+          ok: true,
+          json: async () => ({
+            enabled: true,
+            send_resolved: true,
+            smtp_host: 'smtp.example.com',
+            smtp_port: 587,
+            smtp_username: null,
+            smtp_from: 'monitor@example.com',
+            alert_to: 'ops@example.com',
+            smtp_password_configured: true,
+            smtp_configured: true,
+            alerts_ready: true,
+            env_alerts_enabled: true,
+            created_at: '2026-06-28T00:00:00Z',
+            updated_at: '2026-06-28T00:00:00Z',
+          }),
+        };
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await getAlertSettings('secret-key');
+    await updateAlertSettings({ enabled: true }, 'secret-key');
+    await sendTestAlert('secret-key');
+    await getAlertEvents('secret-key');
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });
