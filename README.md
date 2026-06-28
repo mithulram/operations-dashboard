@@ -67,8 +67,9 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite proxies `/api` and `/h
 3. Save. The key is stored in this browser's `localStorage` only.
 4. Use **Monitors** to create, edit, pause, delete, and run checks.
 5. Use **Status Page** to configure components/monitors and preview the public page.
+6. Use **Settings → Email alerts** to enable notifications, set the recipient, and send a test email (requires backend SMTP env vars).
 
-Never commit the real admin key. Do not put `ADMIN_API_KEY` in frontend build environment variables or Cloudflare Pages settings.
+Never commit the real admin key. Do not put `ADMIN_API_KEY` or SMTP credentials in frontend build environment variables or Cloudflare Pages settings. SMTP secrets (`SMTP_PASSWORD`, etc.) are configured on the backend Render service only.
 
 ### Public status page
 
@@ -175,6 +176,21 @@ npm run smoke:deployed  # verify live frontend + API after deploy
 | `GET /api/v1/status-page` | Bearer admin key | Status page builder config |
 | `PATCH /api/v1/status-page` | Bearer admin key | Update status page settings |
 | `POST/PATCH/DELETE /api/v1/status-page/components...` | Bearer admin key | Manage status page components/monitors |
+| `GET /api/v1/settings/alerts` | Bearer admin key | Read alert settings (masked; no SMTP password) |
+| `PATCH /api/v1/settings/alerts` | Bearer admin key | Update enabled, recipient, recovery toggle |
+| `POST /api/v1/settings/alerts/test` | Bearer admin key | Send test alert email |
+| `GET /api/v1/settings/alerts/events` | Bearer admin key | Recent alert delivery events |
+
+### Email alerts (Settings)
+
+The **Settings** page includes an **Email alerts** section (admin key required):
+
+- Toggle alerts and recovery notifications
+- Set recipient and from address (non-secret fields)
+- Send a test email and review recent delivery events
+- View config status (`Configured`, `Missing SMTP env on backend`, or `Disabled`)
+
+SMTP credentials are **backend env only** (`SMTP_HOST`, `SMTP_PASSWORD`, etc. on Render). The frontend never stores, sends, or displays SMTP passwords after saving.
 
 ## Screenshots
 
