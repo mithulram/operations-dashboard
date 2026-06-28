@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { maskAdminApiKey } from '../auth/adminKey';
+import { AlertSettingsSection } from '../components/AlertSettingsSection';
 import { useAdminKey } from '../context/AdminKeyContext';
 
 export function SettingsPage() {
@@ -75,6 +76,8 @@ export function SettingsPage() {
           {savedMessage}
         </p>
       )}
+
+      <AlertSettingsSection />
     </section>
   );
 }

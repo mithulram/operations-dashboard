@@ -615,6 +615,124 @@ body {
   color: var(--text-secondary);
 }
 
+.alert-settings {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.alert-settings h3,
+.alert-settings h4 {
+  margin-top: 0;
+}
+
+.alert-settings__locked,
+.alert-settings__warning {
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.alert-settings__locked {
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+}
+
+.alert-settings__warning {
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  color: var(--text-secondary);
+}
+
+.alert-settings__status {
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.alert-settings__status--ok {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.alert-settings__status--warn {
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+
+.alert-settings__status--muted {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.alert-settings__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.alert-settings__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.alert-settings__form {
+  margin-bottom: 1.25rem;
+}
+
+.alert-settings__events h4 {
+  margin-bottom: 0.75rem;
+}
+
+.alert-settings__error {
+  color: #fecaca;
+  margin: 0 0 1rem;
+}
+
+.alert-settings__loading {
+  color: var(--text-secondary);
+}
+
+.alert-events-table-wrap {
+  overflow-x: auto;
+}
+
+.alert-events-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.alert-events-table th,
+.alert-events-table td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.alert-events-table__success {
+  color: #86efac;
+}
+
+.alert-events-table__failure {
+  color: #fecaca;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .monitor-list {
   display: grid;
   gap: 1rem;
