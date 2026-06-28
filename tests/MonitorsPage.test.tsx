@@ -74,9 +74,11 @@ describe('MonitorsPage', () => {
   it('shows locked state when no admin key is saved', () => {
     renderWithProviders(<MonitorsPage />, { route: '/monitors' });
 
-    expect(screen.getByText('Monitor management is locked')).toBeInTheDocument();
-    expect(screen.getByText(/public status page stay readable without a key/i)).toBeInTheDocument();
+    expect(screen.getByText('Monitor management')).toBeInTheDocument();
+    expect(screen.getByText(/Dashboard, incidents, and public status stay readable/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Connect admin key' })).toHaveAttribute('href', '/settings');
     expect(screen.queryByRole('button', { name: 'Add monitor' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bearer /)).not.toBeInTheDocument();
   });
 
   it('shows guided empty state when authenticated with no monitors', async () => {
@@ -99,6 +101,55 @@ describe('MonitorsPage', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Add your first monitor' })).toBeInTheDocument();
+  });
+
+  it('prefills the monitor form from a sample template', async () => {
+    const user = userEvent.setup();
+    setAdminApiKey('test-admin-key');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/api/v1/monitors') && !url.includes('/checks')) {
+          return { ok: true, json: async () => [] };
+        }
+        throw new Error(`Unexpected fetch URL: ${url}`);
+      }),
+    );
+
+    renderWithProviders(<MonitorsPage />, { route: '/monitors' });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Sample monitor templates')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: /Website uptime/i }));
+
+    expect(screen.getByDisplayValue('Website uptime')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('https://example.com')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('60')).toBeInTheDocument();
+  });
+
+  it('opens prefilled monitor form from template query param', async () => {
+    setAdminApiKey('test-admin-key');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/api/v1/monitors') && !url.includes('/checks')) {
+          return { ok: true, json: async () => [] };
+        }
+        throw new Error(`Unexpected fetch URL: ${url}`);
+      }),
+    );
+
+    renderWithProviders(<MonitorsPage />, { route: '/monitors?template=api-health' });
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('API health check')).toBeInTheDocument();
+    });
+
+    expect(screen.getByDisplayValue('https://api.example.com/health')).toBeInTheDocument();
   });
 
   it('renders mocked monitors when authenticated', async () => {

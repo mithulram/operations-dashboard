@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { MonitorTemplatePicker } from './MonitorTemplatePicker';
+import { OperationalCoverage } from './OperationalCoverage';
 
 interface FirstRunOnboardingProps {
   isAdminConnected: boolean;
@@ -11,7 +13,7 @@ const steps = [
   },
   {
     title: 'Add a monitor',
-    detail: 'Create a URL monitor with interval and expected status codes.',
+    detail: 'Use a sample template or create a URL monitor with interval and status codes.',
   },
   {
     title: 'Run the first check',
@@ -34,9 +36,11 @@ export function FirstRunOnboarding({ isAdminConnected }: FirstRunOnboardingProps
         <p className="onboarding-panel__intro">
           {isAdminConnected
             ? 'Your admin key is connected. Add a monitor to begin tracking uptime and publishing status.'
-            : 'You are in read-only mode. Connect your admin key to create monitors and manage the status page.'}
+            : 'Browse the dashboard, incidents, and public status in read-only mode. Connect an admin key when you are ready to manage monitors.'}
         </p>
       </div>
+
+      <OperationalCoverage />
 
       <ol className="onboarding-steps">
         {steps.map((step, index) => (
@@ -51,6 +55,8 @@ export function FirstRunOnboarding({ isAdminConnected }: FirstRunOnboardingProps
           </li>
         ))}
       </ol>
+
+      <MonitorTemplatePicker isAdminConnected={isAdminConnected} />
 
       <div className="onboarding-panel__actions">
         <Link className="button button--primary" to={primaryTo}>

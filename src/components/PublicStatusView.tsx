@@ -49,7 +49,15 @@ export function PublicStatusView({ status }: PublicStatusViewProps) {
       </section>
 
       {!hasComponents || !hasMonitors ? (
-        <p className="empty-state">No monitored services are published on this status page yet.</p>
+        <section className="public-status__setup" aria-label="Published services">
+          <p className="public-status__setup-lead">
+            This status page is live and ready to share with your users.
+          </p>
+          <p className="public-status__empty">
+            Service components will appear here after monitors are assigned in the admin status
+            page builder. Monitor URLs are never shown on this public page.
+          </p>
+        </section>
       ) : (
         <section className="public-status__components" aria-label="Service components">
           {status.components.map((component) => (
@@ -92,7 +100,7 @@ export function PublicStatusView({ status }: PublicStatusViewProps) {
       <section className="public-status__incidents" aria-label="Recent incidents">
         <h2>Recent incidents</h2>
         {status.recent_incidents.length === 0 ? (
-          <p className="public-status__empty">No recent incidents.</p>
+          <p className="public-status__empty">No recent incidents reported.</p>
         ) : (
           <ul className="public-status__incident-list">
             {status.recent_incidents.map((incident, index) => (

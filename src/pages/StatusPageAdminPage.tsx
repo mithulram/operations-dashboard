@@ -149,8 +149,8 @@ export function StatusPageAdminPage() {
   if (!isConfigured) {
     return (
       <LockedState
-        title="Status page builder is locked"
-        message="The public status page at /status/default stays readable without a key. Connect your admin key in Settings to assign monitors and edit page content."
+        title="Status page builder"
+        lockedFeature="status page configuration and monitor assignments"
       />
     );
   }

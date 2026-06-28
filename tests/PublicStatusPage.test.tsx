@@ -91,6 +91,35 @@ describe('PublicStatusPageRoute', () => {
     });
   });
 
+  it('renders intentional empty and no-incident states', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockPublicFetch({
+        title: 'Service Status',
+        slug: 'default',
+        overall_status: 'unknown',
+        updated_at: '2026-06-19T08:14:00Z',
+        recent_incidents: [],
+        components: [{ id: 1, name: 'Core services', status: 'unknown', monitors: [] }],
+      }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/status/default']}>
+        <Routes>
+          <Route path="/status/:slug" element={<PublicStatusPageRoute />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Service components will appear here/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('No recent incidents reported.')).toBeInTheDocument();
+    expect(screen.queryByText(/example\.com/i)).not.toBeInTheDocument();
+  });
+
   it('renders recent incidents from public status JSON', async () => {
     vi.stubGlobal(
       'fetch',

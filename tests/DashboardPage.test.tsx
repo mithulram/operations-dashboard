@@ -109,6 +109,9 @@ describe('DashboardPage', () => {
     });
 
     expect(screen.getByText('Get started with Ops Monitor')).toBeInTheDocument();
+    expect(screen.getByLabelText('Operational coverage')).toBeInTheDocument();
+    expect(screen.getByText('API availability')).toBeInTheDocument();
+    expect(screen.getByText('Email alerts')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Connect admin key in Settings' })).toHaveAttribute(
       'href',
       '/settings',
@@ -145,5 +148,28 @@ describe('DashboardPage', () => {
     expect(
       screen.getByText(/Your admin key is connected. Add a monitor to begin tracking uptime/),
     ).toBeInTheDocument();
+  });
+
+  it('routes template picks to Settings without admin key', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockFetch({
+        ...baseSummary,
+        monitors_total: 0,
+        monitors_up: 0,
+        monitors_down: 0,
+        monitors_paused: 0,
+        monitors_unknown: 0,
+      }),
+    );
+
+    renderWithProviders(<DashboardPage />, { route: '/' });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Sample monitor templates')).toBeInTheDocument();
+    });
+
+    const templateLink = screen.getByRole('link', { name: /Website uptime/i });
+    expect(templateLink).toHaveAttribute('href', '/settings');
   });
 });

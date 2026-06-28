@@ -1,20 +1,21 @@
 import { Link } from 'react-router-dom';
+import { ReadOnlyNotice } from './ReadOnlyNotice';
 
 interface LockedStateProps {
   title?: string;
-  message?: string;
+  lockedFeature?: string;
 }
 
 export function LockedState({
-  title = 'Monitor management is locked',
-  message = 'The dashboard and public status page stay readable without a key. Paste your backend ADMIN_API_KEY in Settings to create monitors, run checks, and edit the status page builder.',
+  title = 'Admin key required',
+  lockedFeature = 'monitor changes, status page configuration, and alert settings',
 }: LockedStateProps) {
   return (
     <section className="locked-state" aria-label={title}>
       <h2>{title}</h2>
-      <p>{message}</p>
+      <ReadOnlyNotice lockedFeature={lockedFeature} />
       <Link className="button button--primary" to="/settings">
-        Open Settings
+        Connect admin key
       </Link>
     </section>
   );

@@ -87,6 +87,13 @@ Never commit the real admin key. Do not put `ADMIN_API_KEY` or SMTP credentials 
 
 Public dashboard summary and the status page remain readable before you connect an admin key.
 
+## Read-only demo mode
+
+- **Dashboard**, **Incidents**, and the public **status page** load without an admin key.
+- **Monitors**, **Status Page** builder, and alert settings require the browser-local admin key from **Settings**.
+- Sample monitor templates prefill the create form only — they never auto-create monitors.
+- The admin key is never part of the frontend build or Cloudflare env vars.
+
 ## Deploy the frontend (Cloudflare Pages)
 
 Cloudflare Pages is **not GitHub-connected** for this project. After pushing to `main`, deploy with GitHub Actions or locally.

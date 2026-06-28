@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   createMonitor,
   deleteMonitor,
@@ -14,6 +15,7 @@ import {
   monitorToFormValues,
   type MonitorFormValues,
 } from '../components/MonitorFormModal';
+import { getMonitorTemplate } from '../data/monitorTemplates';
 import { MonitorList } from '../components/MonitorList';
 import { useAdminKey } from '../context/AdminKeyContext';
 import type { Monitor, MonitorInput } from '../types';
@@ -21,12 +23,14 @@ import { ApiError } from '../types';
 
 export function MonitorsPage() {
   const { adminApiKey, isConfigured } = useAdminKey();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyMonitorId, setBusyMonitorId] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMonitor, setEditingMonitor] = useState<Monitor | null>(null);
+  const [templateValues, setTemplateValues] = useState<MonitorFormValues | undefined>();
 
   const loadMonitors = useCallback(async () => {
     if (!adminApiKey) {
@@ -53,6 +57,26 @@ export function MonitorsPage() {
   useEffect(() => {
     void loadMonitors();
   }, [loadMonitors]);
+
+  useEffect(() => {
+    if (!isConfigured) {
+      return;
+    }
+
+    const templateId = searchParams.get('template');
+    if (!templateId) {
+      return;
+    }
+
+    const template = getMonitorTemplate(templateId);
+    if (template) {
+      setEditingMonitor(null);
+      setTemplateValues(template.values);
+      setModalOpen(true);
+    }
+
+    setSearchParams({}, { replace: true });
+  }, [isConfigured, searchParams, setSearchParams]);
 
   async function handleCreate(values: MonitorInput) {
     if (!adminApiKey) {
@@ -121,12 +145,10 @@ export function MonitorsPage() {
 
   const modalInitialValues: MonitorFormValues | undefined = editingMonitor
     ? monitorToFormValues(editingMonitor)
-    : undefined;
+    : templateValues;
 
   if (!isConfigured) {
-    return (
-      <LockedState message="The dashboard and public status page stay readable without a key. Paste your backend ADMIN_API_KEY in Settings to create monitors, run checks, and delete monitors." />
-    );
+    return <LockedState title="Monitor management" lockedFeature="creating monitors and running checks" />;
   }
 
   return (
@@ -141,6 +163,7 @@ export function MonitorsPage() {
           className="button button--primary"
           onClick={() => {
             setEditingMonitor(null);
+            setTemplateValues(undefined);
             setModalOpen(true);
           }}
         >
@@ -156,6 +179,12 @@ export function MonitorsPage() {
         <MonitorsEmptyState
           onAddMonitor={() => {
             setEditingMonitor(null);
+            setTemplateValues(undefined);
+            setModalOpen(true);
+          }}
+          onSelectTemplate={(values) => {
+            setEditingMonitor(null);
+            setTemplateValues(values);
             setModalOpen(true);
           }}
         />
@@ -182,6 +211,7 @@ export function MonitorsPage() {
         onClose={() => {
           setModalOpen(false);
           setEditingMonitor(null);
+          setTemplateValues(undefined);
         }}
         onSubmit={editingMonitor ? handleUpdate : handleCreate}
       />

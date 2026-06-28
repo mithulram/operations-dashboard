@@ -78,7 +78,8 @@ describe('StatusPageAdminPage', () => {
 
   it('shows locked state without admin key', () => {
     renderWithProviders(<StatusPageAdminPage />, { route: '/status-page' });
-    expect(screen.getByText('Status page builder is locked')).toBeInTheDocument();
+    expect(screen.getByText('Status page builder')).toBeInTheDocument();
+    expect(screen.getByText(/Dashboard, incidents, and public status stay readable/i)).toBeInTheDocument();
   });
 
   it('renders title and components with admin key', async () => {
