@@ -85,3 +85,58 @@ export class ApiError extends Error {
 export function hasFleetSummary(summary: Summary): boolean {
   return typeof summary.monitors_total === 'number';
 }
+
+export type PublicStatusLevel = 'operational' | 'degraded' | 'outage' | 'unknown';
+
+export interface PublicStatusMonitor {
+  id: number;
+  name: string;
+  status: MonitorStatus;
+  last_check_at: string | null;
+  last_response_time_ms?: number | null;
+}
+
+export interface PublicStatusComponent {
+  id: number;
+  name: string;
+  status: PublicStatusLevel;
+  monitors: PublicStatusMonitor[];
+}
+
+export interface PublicStatusPage {
+  title: string;
+  slug: string;
+  overall_status: PublicStatusLevel;
+  updated_at: string;
+  components: PublicStatusComponent[];
+  recent_incidents: unknown[];
+}
+
+export interface AdminStatusPageComponent {
+  id: number;
+  name: string;
+  sort_order: number;
+  monitor_ids: number[];
+}
+
+export interface AdminStatusPage {
+  id: number;
+  slug: string;
+  title: string;
+  is_public: boolean;
+  show_response_times: boolean;
+  created_at: string;
+  updated_at: string;
+  components: AdminStatusPageComponent[];
+}
+
+export interface StatusPageUpdateInput {
+  title?: string;
+  is_public?: boolean;
+  show_response_times?: boolean;
+}
+
+export interface StatusPageComponentInput {
+  name: string;
+  sort_order?: number;
+}

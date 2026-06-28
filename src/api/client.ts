@@ -1,4 +1,14 @@
-import type { CheckHistoryItem, Incident, Monitor, MonitorInput, Summary } from '../types';
+import type {
+  CheckHistoryItem,
+  Incident,
+  Monitor,
+  MonitorInput,
+  PublicStatusPage,
+  AdminStatusPage,
+  StatusPageComponentInput,
+  StatusPageUpdateInput,
+  Summary,
+} from '../types';
 import { ApiError } from '../types';
 import { normalizeApiBaseUrl } from '../utils';
 import {
@@ -6,6 +16,8 @@ import {
   parseIncidents,
   parseMonitor,
   parseMonitors,
+  parsePublicStatusPage,
+  parseStatusPage,
   parseSummary,
 } from './validate';
 
@@ -152,6 +164,103 @@ export async function getMonitorChecks(
     requireAuth: true,
   });
   return parseCheckHistory(data);
+}
+
+export async function getStatusPage(adminApiKey: string | null): Promise<AdminStatusPage> {
+  const data = await request<unknown>('/api/v1/status-page', {
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseStatusPage(data);
+}
+
+export async function updateStatusPage(
+  input: StatusPageUpdateInput,
+  adminApiKey: string | null,
+): Promise<AdminStatusPage> {
+  const data = await request<unknown>('/api/v1/status-page', {
+    method: 'PATCH',
+    body: input,
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseStatusPage(data);
+}
+
+export async function createStatusPageComponent(
+  input: StatusPageComponentInput,
+  adminApiKey: string | null,
+): Promise<AdminStatusPage> {
+  const data = await request<unknown>('/api/v1/status-page/components', {
+    method: 'POST',
+    body: input,
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseStatusPage(data);
+}
+
+export async function updateStatusPageComponent(
+  id: number,
+  input: Partial<StatusPageComponentInput>,
+  adminApiKey: string | null,
+): Promise<AdminStatusPage> {
+  const data = await request<unknown>(`/api/v1/status-page/components/${id}`, {
+    method: 'PATCH',
+    body: input,
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseStatusPage(data);
+}
+
+export async function deleteStatusPageComponent(
+  id: number,
+  adminApiKey: string | null,
+): Promise<AdminStatusPage> {
+  const data = await request<unknown>(`/api/v1/status-page/components/${id}`, {
+    method: 'DELETE',
+    adminApiKey,
+    requireAuth: true,
+  });
+  return parseStatusPage(data);
+}
+
+export async function addMonitorToComponent(
+  componentId: number,
+  monitorId: number,
+  adminApiKey: string | null,
+): Promise<AdminStatusPage> {
+  const data = await request<unknown>(
+    `/api/v1/status-page/components/${componentId}/monitors/${monitorId}`,
+    {
+      method: 'POST',
+      adminApiKey,
+      requireAuth: true,
+    },
+  );
+  return parseStatusPage(data);
+}
+
+export async function removeMonitorFromComponent(
+  componentId: number,
+  monitorId: number,
+  adminApiKey: string | null,
+): Promise<AdminStatusPage> {
+  const data = await request<unknown>(
+    `/api/v1/status-page/components/${componentId}/monitors/${monitorId}`,
+    {
+      method: 'DELETE',
+      adminApiKey,
+      requireAuth: true,
+    },
+  );
+  return parseStatusPage(data);
+}
+
+export async function fetchPublicStatus(slug: string): Promise<PublicStatusPage> {
+  const data = await request<unknown>(`/api/public/v1/status/${encodeURIComponent(slug)}`);
+  return parsePublicStatusPage(data);
 }
 
 export { API_BASE };

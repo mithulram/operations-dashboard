@@ -1,10 +1,28 @@
-import type { CheckHistoryItem, Incident, Monitor, MonitorStatus, Summary } from '../types';
+import type {
+  CheckHistoryItem,
+  Incident,
+  Monitor,
+  MonitorStatus,
+  PublicStatusComponent,
+  PublicStatusLevel,
+  PublicStatusMonitor,
+  PublicStatusPage,
+  AdminStatusPage,
+  AdminStatusPageComponent,
+  Summary,
+} from '../types';
 import { ApiError } from '../types';
 
 const KNOWN_SEVERITIES = new Set(['SEV-1', 'SEV-2', 'SEV-3']);
 const KNOWN_INCIDENT_STATUSES = new Set(['OPEN', 'RESOLVED']);
 const KNOWN_MONITOR_STATUSES = new Set<MonitorStatus>(['up', 'down', 'paused', 'unknown']);
 const KNOWN_HTTP_METHODS = new Set(['GET', 'HEAD']);
+const KNOWN_PUBLIC_STATUS_LEVELS = new Set<PublicStatusLevel>([
+  'operational',
+  'degraded',
+  'outage',
+  'unknown',
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -265,4 +283,135 @@ export function parseCheckHistory(data: unknown): CheckHistoryItem[] {
           : String(item.error_message),
     };
   });
+}
+
+function parsePublicStatusLevel(value: unknown, field: string): PublicStatusLevel {
+  if (!isNonEmptyString(value) || !KNOWN_PUBLIC_STATUS_LEVELS.has(value as PublicStatusLevel)) {
+    throw new ApiError(`Invalid status page response: ${field} is invalid.`);
+  }
+  return value as PublicStatusLevel;
+}
+
+function parsePublicStatusMonitor(data: unknown, index: number): PublicStatusMonitor {
+  if (!isRecord(data)) {
+    throw new ApiError(`Invalid status page response: monitor at index ${index} must be an object.`);
+  }
+
+  const status = data.status;
+  const parsedStatus: MonitorStatus =
+    isNonEmptyString(status) && KNOWN_MONITOR_STATUSES.has(status as MonitorStatus)
+      ? (status as MonitorStatus)
+      : 'unknown';
+
+  const monitor: PublicStatusMonitor = {
+    id: isNonNegativeInteger(data.id, 'id'),
+    name: isNonEmptyString(data.name) ? data.name : 'Monitor',
+    status: parsedStatus,
+    last_check_at:
+      data.last_check_at === null || data.last_check_at === undefined
+        ? null
+        : String(data.last_check_at),
+  };
+
+  if ('last_response_time_ms' in data) {
+    monitor.last_response_time_ms =
+      data.last_response_time_ms === null || data.last_response_time_ms === undefined
+        ? null
+        : isNonNegativeInteger(data.last_response_time_ms, 'last_response_time_ms');
+  }
+
+  return monitor;
+}
+
+function parsePublicStatusComponent(data: unknown, index: number): PublicStatusComponent {
+  if (!isRecord(data)) {
+    throw new ApiError(
+      `Invalid status page response: component at index ${index} must be an object.`,
+    );
+  }
+
+  const monitors = data.monitors;
+  if (!Array.isArray(monitors)) {
+    throw new ApiError(
+      `Invalid status page response: component at index ${index} must include monitors array.`,
+    );
+  }
+
+  return {
+    id: isNonNegativeInteger(data.id, 'id'),
+    name: isNonEmptyString(data.name) ? data.name : 'Component',
+    status: parsePublicStatusLevel(data.status, 'status'),
+    monitors: monitors.map((item, monitorIndex) => parsePublicStatusMonitor(item, monitorIndex)),
+  };
+}
+
+export function parsePublicStatusPage(data: unknown): PublicStatusPage {
+  if (!isRecord(data)) {
+    throw new ApiError('Invalid status page response: expected an object.');
+  }
+
+  const components = data.components;
+  if (!Array.isArray(components)) {
+    throw new ApiError('Invalid status page response: expected components array.');
+  }
+
+  const updated_at = data.updated_at;
+  if (!isNonEmptyString(updated_at) || !isValidIsoDate(updated_at)) {
+    throw new ApiError('Invalid status page response: updated_at is invalid.');
+  }
+
+  return {
+    title: isNonEmptyString(data.title) ? data.title : 'Status',
+    slug: isNonEmptyString(data.slug) ? data.slug : 'default',
+    overall_status: parsePublicStatusLevel(data.overall_status, 'overall_status'),
+    updated_at,
+    components: components.map((item, index) => parsePublicStatusComponent(item, index)),
+    recent_incidents: Array.isArray(data.recent_incidents) ? data.recent_incidents : [],
+  };
+}
+
+function parseAdminStatusPageComponent(data: unknown, index: number): AdminStatusPageComponent {
+  if (!isRecord(data)) {
+    throw new ApiError(
+      `Invalid admin status page response: component at index ${index} must be an object.`,
+    );
+  }
+
+  const monitor_ids = data.monitor_ids;
+  if (!Array.isArray(monitor_ids)) {
+    throw new ApiError(
+      `Invalid admin status page response: component at index ${index} must include monitor_ids.`,
+    );
+  }
+
+  return {
+    id: isNonNegativeInteger(data.id, 'id'),
+    name: isNonEmptyString(data.name) ? data.name : 'Component',
+    sort_order: isNonNegativeInteger(data.sort_order, 'sort_order'),
+    monitor_ids: monitor_ids.map((value, monitorIndex) =>
+      isNonNegativeInteger(value, `monitor_ids[${monitorIndex}]`),
+    ),
+  };
+}
+
+export function parseStatusPage(data: unknown): AdminStatusPage {
+  if (!isRecord(data)) {
+    throw new ApiError('Invalid admin status page response: expected an object.');
+  }
+
+  const components = data.components;
+  if (!Array.isArray(components)) {
+    throw new ApiError('Invalid admin status page response: expected components array.');
+  }
+
+  return {
+    id: isNonNegativeInteger(data.id, 'id'),
+    slug: isNonEmptyString(data.slug) ? data.slug : 'default',
+    title: isNonEmptyString(data.title) ? data.title : 'Status',
+    is_public: Boolean(data.is_public),
+    show_response_times: Boolean(data.show_response_times),
+    created_at: String(data.created_at),
+    updated_at: String(data.updated_at),
+    components: components.map((item, index) => parseAdminStatusPageComponent(item, index)),
+  };
 }
