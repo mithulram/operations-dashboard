@@ -88,6 +88,36 @@ export function PublicStatusView({ status }: PublicStatusViewProps) {
           ))}
         </section>
       )}
+
+      <section className="public-status__incidents" aria-label="Recent incidents">
+        <h2>Recent incidents</h2>
+        {status.recent_incidents.length === 0 ? (
+          <p className="public-status__empty">No recent incidents.</p>
+        ) : (
+          <ul className="public-status__incident-list">
+            {status.recent_incidents.map((incident, index) => (
+              <li key={`${incident.title}-${incident.started_at}-${index}`}>
+                <div className="public-status__incident-header">
+                  <strong>{incident.title}</strong>
+                  <span
+                    className={
+                      incident.status === 'RESOLVED'
+                        ? 'badge badge--resolved'
+                        : 'badge badge--open'
+                    }
+                  >
+                    {incident.status === 'RESOLVED' ? 'Resolved' : 'Open'}
+                  </span>
+                </div>
+                <p className="public-status__incident-meta">
+                  {incident.severity} · Started {formatTimestamp(incident.started_at)}
+                  {incident.resolved_at && ` · Resolved ${formatTimestamp(incident.resolved_at)}`}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

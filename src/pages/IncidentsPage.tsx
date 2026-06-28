@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchIncidents } from '../api/client';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { FilterBar } from '../components/FilterBar';
+import { IncidentDetailPanel } from '../components/IncidentDetailPanel';
 import { IncidentsTable } from '../components/IncidentsTable';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Incident, SeverityFilter, StatusFilter } from '../types';
@@ -24,6 +25,7 @@ export function IncidentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [severity, setSeverity] = useState<SeverityFilter>('ALL');
   const [status, setStatus] = useState<StatusFilter>('ALL');
+  const [selectedIncidentId, setSelectedIncidentId] = useState<number | null>(null);
 
   const loadIncidents = useCallback(async () => {
     setLoading(true);
@@ -46,11 +48,26 @@ export function IncidentsPage() {
     [incidents, severity, status],
   );
 
+  function handleSelectIncident(incident: Incident) {
+    if (incident.id !== undefined) {
+      setSelectedIncidentId(incident.id);
+    }
+  }
+
+  function handleIncidentUpdated(updated: Incident) {
+    setIncidents((current) =>
+      current.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)),
+    );
+  }
+
   return (
     <section className="panel-section" aria-label="Incidents">
       <div className="panel-section__header">
         <h2>Incidents</h2>
-        <p className="panel-section__hint">Synthetic incident context from the backend demo API.</p>
+        <p className="panel-section__hint">
+          Automatic incidents from monitor outages plus legacy demo context when no real incidents
+          exist yet.
+        </p>
       </div>
 
       {error && <ErrorBanner message={error} onRetry={() => void loadIncidents()} />}
@@ -67,8 +84,16 @@ export function IncidentsPage() {
             resultCount={filteredIncidents.length}
             totalCount={incidents.length}
           />
-          <IncidentsTable incidents={filteredIncidents} />
+          <IncidentsTable incidents={filteredIncidents} onSelect={handleSelectIncident} />
         </>
+      )}
+
+      {selectedIncidentId !== null && (
+        <IncidentDetailPanel
+          incidentId={selectedIncidentId}
+          onClose={() => setSelectedIncidentId(null)}
+          onUpdated={handleIncidentUpdated}
+        />
       )}
     </section>
   );

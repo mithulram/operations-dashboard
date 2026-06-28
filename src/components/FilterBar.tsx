@@ -10,7 +10,7 @@ interface FilterBarProps {
 }
 
 const severityOptions: SeverityFilter[] = ['ALL', 'SEV-1', 'SEV-2', 'SEV-3'];
-const statusOptions: StatusFilter[] = ['ALL', 'OPEN', 'RESOLVED'];
+const statusOptions: StatusFilter[] = ['ALL', 'OPEN', 'ACKNOWLEDGED', 'RESOLVED'];
 
 export function FilterBar({
   severity,

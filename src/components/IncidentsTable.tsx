@@ -3,6 +3,7 @@ import { formatTimestamp } from '../utils';
 
 interface IncidentsTableProps {
   incidents: Incident[];
+  onSelect?: (incident: Incident) => void;
 }
 
 function severityClass(severity: string): string {
@@ -22,6 +23,8 @@ function statusClass(status: string): string {
   switch (status) {
     case 'OPEN':
       return 'badge badge--open';
+    case 'ACKNOWLEDGED':
+      return 'badge badge--acknowledged';
     case 'RESOLVED':
       return 'badge badge--resolved';
     default:
@@ -29,7 +32,7 @@ function statusClass(status: string): string {
   }
 }
 
-export function IncidentsTable({ incidents }: IncidentsTableProps) {
+export function IncidentsTable({ incidents, onSelect }: IncidentsTableProps) {
   if (incidents.length === 0) {
     return (
       <section className="incidents-panel" aria-label="Incidents">
@@ -52,7 +55,7 @@ export function IncidentsTable({ incidents }: IncidentsTableProps) {
           <thead>
             <tr>
               <th scope="col">ID</th>
-              <th scope="col">Service</th>
+              <th scope="col">Monitor</th>
               <th scope="col">Severity</th>
               <th scope="col">Status</th>
               <th scope="col">Summary</th>
@@ -61,11 +64,27 @@ export function IncidentsTable({ incidents }: IncidentsTableProps) {
           </thead>
           <tbody>
             {incidents.map((incident) => (
-              <tr key={incident.identifier}>
+              <tr
+                key={incident.identifier}
+                className={onSelect ? 'incidents-table__row--clickable' : undefined}
+                onClick={onSelect ? () => onSelect(incident) : undefined}
+                onKeyDown={
+                  onSelect
+                    ? (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          onSelect(incident);
+                        }
+                      }
+                    : undefined
+                }
+                tabIndex={onSelect ? 0 : undefined}
+                role={onSelect ? 'button' : undefined}
+              >
                 <td>
                   <code>{incident.identifier}</code>
                 </td>
-                <td>{incident.service}</td>
+                <td>{incident.monitor_name ?? incident.service}</td>
                 <td>
                   <span className={severityClass(incident.severity)}>{incident.severity}</span>
                 </td>
