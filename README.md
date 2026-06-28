@@ -1,8 +1,8 @@
 # Operations Dashboard
 
-A production-style React operations app for fleet health, persisted URL monitors, and incident context. It consumes the live [Service Health & Incident Monitor](https://github.com/mithulram/service-health-incident-monitor) backend (portfolio project #4).
+A production-style React operations app for fleet health, persisted URL monitors, public status pages, and incident context. It consumes the live [Service Health & Incident Monitor](https://github.com/mithulram/service-health-incident-monitor) backend (portfolio project #4).
 
-Public summary and incident endpoints remain readable without credentials. Monitor management routes are protected on the backend with `ADMIN_API_KEY`; this UI stores that key locally in the browser and sends `Authorization: Bearer <key>` only for protected monitor requests.
+Public summary, incident, and status page endpoints remain readable without credentials. Monitor and status-page management routes are protected on the backend with `ADMIN_API_KEY`; this UI stores that key locally in the browser and sends `Authorization: Bearer <key>` only for protected requests.
 
 ## Live demo
 
@@ -66,8 +66,29 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite proxies `/api` and `/h
 2. Paste the backend `ADMIN_API_KEY` value.
 3. Save. The key is stored in this browser's `localStorage` only.
 4. Use **Monitors** to create, edit, pause, delete, and run checks.
+5. Use **Status Page** to configure components/monitors and preview the public page.
 
 Never commit the real admin key. Do not put `ADMIN_API_KEY` in frontend build environment variables or Cloudflare Pages settings.
+
+### Public status page
+
+- Admin builder: `/status-page` (requires saved admin key)
+- Public view: `/status/default` (no admin nav, no auth)
+
+Example public URL after deploy:
+
+`https://operations-dashboard-b8v.pages.dev/status/default`
+
+### Manual Cloudflare deploy
+
+Cloudflare Pages is not GitHub-connected for this project. After pushing frontend changes to `main`, deploy manually:
+
+```bash
+VITE_API_BASE_URL=https://service-health-incident-monitor.onrender.com npm run build
+npx wrangler pages deploy dist --project-name=operations-dashboard --branch=main
+```
+
+Do not set `ADMIN_API_KEY` in Cloudflare build settings.
 
 ### Environment
 
@@ -129,7 +150,7 @@ npm run smoke:deployed  # verify live frontend + API after deploy
 
 ## Architecture
 
-- **React + TypeScript + Vite + react-router-dom** for a typed SPA with Dashboard, Monitors, Incidents, and Settings views.
+- **React + TypeScript + Vite + react-router-dom** for a typed SPA with Dashboard, Monitors, Incidents, Status Page, Settings, and public `/status/:slug` views.
 - **`src/api/client.ts`** — typed `fetch` wrapper with public and protected monitor endpoints.
 - **`src/auth/adminKey.ts`** — localStorage helpers for the user-entered admin key.
 - **`src/context/AdminKeyContext.tsx`** — shared auth state for monitor management.
@@ -150,6 +171,10 @@ npm run smoke:deployed  # verify live frontend + API after deploy
 | `DELETE /api/v1/monitors/{id}` | Bearer admin key | Delete monitor |
 | `POST /api/v1/checks/run/{id}` | Bearer admin key | Run check now |
 | `GET /api/v1/monitors/{id}/checks` | Bearer admin key | Recent check history |
+| `GET /api/public/v1/status/{slug}` | Public | Public status page JSON |
+| `GET /api/v1/status-page` | Bearer admin key | Status page builder config |
+| `PATCH /api/v1/status-page` | Bearer admin key | Update status page settings |
+| `POST/PATCH/DELETE /api/v1/status-page/components...` | Bearer admin key | Manage status page components/monitors |
 
 ## Screenshots
 
@@ -162,7 +187,7 @@ Capture after starting the Service Health backend and `npm run dev`.
 
 ## Resume-ready description
 
-> Built a TypeScript/React operations product UI with react-router navigation, local admin-key auth for protected monitor APIs, fleet health cards, monitor CRUD with check history, incident filtering, accessible loading/retry states, Vitest coverage, and GitHub Actions CI against a live Render backend.
+> Built a TypeScript/React operations product UI with react-router navigation, local admin-key auth for protected APIs, monitor CRUD with check history, a public status page builder/view, incident filtering, accessible loading/retry states, Vitest coverage, and GitHub Actions CI against a live Render backend.
 
 ## License
 
