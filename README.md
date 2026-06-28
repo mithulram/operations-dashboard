@@ -79,7 +79,21 @@ Never commit the real admin key. Do not put `ADMIN_API_KEY` or SMTP credentials 
 
 ## Deploy the frontend (Cloudflare Pages)
 
-Cloudflare Pages is **not GitHub-connected** for this project. After pushing to `main`, deploy manually:
+Cloudflare Pages is **not GitHub-connected** for this project. After pushing to `main`, deploy with GitHub Actions or locally.
+
+### Recommended: manual GitHub Actions deploy
+
+1. In the Cloudflare dashboard, create an API token with **Cloudflare Pages — Edit** permission for the target account.
+2. In GitHub → **Settings → Secrets and variables → Actions**, add:
+   - `CLOUDFLARE_API_TOKEN` — the Cloudflare API token
+   - `CLOUDFLARE_ACCOUNT_ID` — your Cloudflare account ID
+3. Open **Actions → Deploy to Cloudflare Pages → Run workflow** on `main`.
+
+The workflow runs `npm ci`, `npm test`, builds with `VITE_API_BASE_URL=https://service-health-incident-monitor.onrender.com`, then deploys with Wrangler to project `operations-dashboard` (branch `main`). Secrets are never printed in logs.
+
+**Never** add `ADMIN_API_KEY`, SMTP credentials, or other backend secrets to Cloudflare build env or this workflow. Admin access is entered in the dashboard **Settings** page at runtime only.
+
+### Fallback: local manual deploy
 
 ```bash
 VITE_API_BASE_URL=https://service-health-incident-monitor.onrender.com npm run build
