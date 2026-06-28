@@ -114,6 +114,11 @@ export function parseSummary(data: unknown): Summary {
       data.average_response_time_ms_24h,
       'average_response_time_ms_24h',
     ),
+    is_sample_data: data.is_sample_data === undefined ? undefined : Boolean(data.is_sample_data),
+    sample_reason:
+      data.sample_reason === undefined || data.sample_reason === null
+        ? undefined
+        : String(data.sample_reason),
   };
 }
 
@@ -191,6 +196,7 @@ function parseIncident(data: unknown, index: number): Incident {
         ? null
         : String(data.resolved_at),
     auto_created: data.auto_created === undefined ? undefined : Boolean(data.auto_created),
+    is_sample: data.is_sample === undefined ? undefined : Boolean(data.is_sample),
   };
 }
 
@@ -445,6 +451,11 @@ export function parsePublicStatusPage(data: unknown): PublicStatusPage {
     recent_incidents: Array.isArray(data.recent_incidents)
       ? data.recent_incidents.map((item, index) => parsePublicRecentIncident(item, index))
       : [],
+    is_sample_data: data.is_sample_data === undefined ? undefined : Boolean(data.is_sample_data),
+    sample_reason:
+      data.sample_reason === undefined || data.sample_reason === null
+        ? undefined
+        : String(data.sample_reason),
   };
 }
 

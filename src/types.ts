@@ -15,6 +15,8 @@ export interface Summary extends FleetSummaryFields {
   slo_target_ratio: number;
   error_budget_remaining_ratio: number;
   open_incident_count: number;
+  is_sample_data?: boolean;
+  sample_reason?: string;
 }
 
 export interface Incident {
@@ -28,6 +30,7 @@ export interface Incident {
   status: string;
   summary: string;
   started_at: string;
+  is_sample?: boolean;
   acknowledged_at?: string | null;
   resolved_at?: string | null;
   auto_created?: boolean;
@@ -114,6 +117,14 @@ export function hasFleetSummary(summary: Summary): boolean {
   return typeof summary.monitors_total === 'number';
 }
 
+export function isSampleSummary(summary: Summary): boolean {
+  return summary.is_sample_data === true;
+}
+
+export function isSampleIncident(incident: Incident): boolean {
+  return incident.is_sample === true;
+}
+
 export type PublicStatusLevel = 'operational' | 'degraded' | 'outage' | 'unknown';
 
 export interface PublicStatusMonitor {
@@ -138,6 +149,8 @@ export interface PublicStatusPage {
   updated_at: string;
   components: PublicStatusComponent[];
   recent_incidents: PublicRecentIncident[];
+  is_sample_data?: boolean;
+  sample_reason?: string;
 }
 
 export interface AdminStatusPageComponent {

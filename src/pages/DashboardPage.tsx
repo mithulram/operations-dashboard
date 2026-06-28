@@ -6,10 +6,11 @@ import { FirstRunOnboarding } from '../components/FirstRunOnboarding';
 import { FleetSummaryCards } from '../components/FleetSummaryCards';
 import { IncidentsTable } from '../components/IncidentsTable';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { SampleDataBadge } from '../components/SampleDataBadge';
 import { SummaryCards } from '../components/SummaryCards';
 import { useAdminKey } from '../context/AdminKeyContext';
 import type { Incident, SeverityFilter, StatusFilter, Summary } from '../types';
-import { hasFleetSummary } from '../types';
+import { hasFleetSummary, isSampleSummary } from '../types';
 
 const REFRESH_INTERVAL_MS = 30_000;
 
@@ -74,7 +75,10 @@ export function DashboardPage() {
   );
 
   const showFirstRunOnboarding =
-    summary !== null && hasFleetSummary(summary) && summary.monitors_total === 0;
+    summary !== null &&
+    hasFleetSummary(summary) &&
+    summary.monitors_total === 0 &&
+    !isSampleSummary(summary);
 
   return (
     <>
@@ -95,11 +99,15 @@ export function DashboardPage() {
               <SummaryCards summary={summary} />
             )}
 
+            {isSampleSummary(summary) && <SampleDataBadge reason={summary.sample_reason} />}
+
             <section className="panel-section">
               <div className="panel-section__header">
                 <h2>Recent incidents</h2>
                 <p className="panel-section__hint">
-                  Recent incidents from automatic monitor outages or backend fallback data.
+                  {isSampleSummary(summary)
+                    ? 'Sample incidents for dashboard preview until monitors are configured.'
+                    : 'Recent incidents from automatic monitor outages.'}
                 </p>
               </div>
 

@@ -1,5 +1,6 @@
 import type { PublicStatusLevel, PublicStatusPage } from '../types';
 import { formatMilliseconds, formatTimestamp } from '../utils';
+import { SampleDataBadge } from './SampleDataBadge';
 
 interface PublicStatusViewProps {
   status: PublicStatusPage;
@@ -42,6 +43,7 @@ export function PublicStatusView({ status }: PublicStatusViewProps) {
       <header className="public-status__header">
         <h1>{status.title}</h1>
         <p className="public-status__updated">Last updated {formatTimestamp(status.updated_at)}</p>
+        {status.is_sample_data && <SampleDataBadge reason={status.sample_reason} />}
       </header>
 
       <section className={statusBannerClass(status.overall_status)} aria-label="Overall status">
@@ -51,7 +53,9 @@ export function PublicStatusView({ status }: PublicStatusViewProps) {
       {!hasComponents || !hasMonitors ? (
         <section className="public-status__setup" aria-label="Published services">
           <p className="public-status__setup-lead">
-            This status page is live and ready to share with your users.
+            {status.is_sample_data
+              ? 'Sample status page preview while monitors are being configured.'
+              : 'This status page is live and ready to share with your users.'}
           </p>
           <p className="public-status__empty">
             Service components will appear here after monitors are assigned in the admin status

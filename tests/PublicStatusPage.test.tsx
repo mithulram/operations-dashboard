@@ -91,6 +91,29 @@ describe('PublicStatusPageRoute', () => {
     });
   });
 
+  it('renders sample badge on public status preview', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockPublicFetch({
+        ...operationalStatus,
+        is_sample_data: true,
+        sample_reason: 'No monitors have been configured yet',
+      }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/status/default']}>
+        <Routes>
+          <Route path="/status/:slug" element={<PublicStatusPageRoute />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Sample data · setup preview')).toBeInTheDocument();
+    });
+  });
+
   it('renders intentional empty and no-incident states', async () => {
     vi.stubGlobal(
       'fetch',

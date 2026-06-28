@@ -5,7 +5,9 @@ import { FilterBar } from '../components/FilterBar';
 import { IncidentDetailPanel } from '../components/IncidentDetailPanel';
 import { IncidentsTable } from '../components/IncidentsTable';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { SampleDataBadge } from '../components/SampleDataBadge';
 import type { Incident, SeverityFilter, StatusFilter } from '../types';
+import { isSampleIncident } from '../types';
 
 function filterIncidents(
   incidents: Incident[],
@@ -47,6 +49,7 @@ export function IncidentsPage() {
     () => filterIncidents(incidents, severity, status),
     [incidents, severity, status],
   );
+  const showSampleBadge = incidents.some(isSampleIncident);
 
   function handleSelectIncident(incident: Incident) {
     if (incident.id !== undefined) {
@@ -67,6 +70,7 @@ export function IncidentsPage() {
         <p className="panel-section__hint">
           Track automatic incidents from monitor outages. Open a row for timeline details and actions.
         </p>
+        {showSampleBadge && <SampleDataBadge />}
       </div>
 
       {error && <ErrorBanner message={error} onRetry={() => void loadIncidents()} />}

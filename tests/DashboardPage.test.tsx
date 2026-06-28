@@ -88,6 +88,31 @@ describe('DashboardPage', () => {
     expect(screen.queryByLabelText('Getting started')).not.toBeInTheDocument();
   });
 
+  it('shows sample badge when summary is marked as sample data', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockFetch({
+        ...baseSummary,
+        monitors_total: 3,
+        monitors_up: 2,
+        monitors_down: 0,
+        monitors_paused: 1,
+        monitors_unknown: 0,
+        average_response_time_ms_24h: 142.5,
+        is_sample_data: true,
+        sample_reason: 'No monitors have been configured yet',
+      }),
+    );
+
+    renderWithProviders(<DashboardPage />, { route: '/' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Sample data · setup preview')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByLabelText('Getting started')).not.toBeInTheDocument();
+  });
+
   it('shows first-run onboarding when monitors_total is zero', async () => {
     vi.stubGlobal(
       'fetch',
