@@ -88,7 +88,9 @@ export function DashboardPage() {
             <section className="panel-section">
               <div className="panel-section__header">
                 <h2>Recent incidents</h2>
-                <p className="panel-section__hint">Synthetic demo incidents from the backend portfolio API.</p>
+                <p className="panel-section__hint">
+                  Recent incidents from automatic monitor outages or backend fallback data.
+                </p>
               </div>
 
               <FilterBar

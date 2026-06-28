@@ -65,8 +65,7 @@ export function IncidentsPage() {
       <div className="panel-section__header">
         <h2>Incidents</h2>
         <p className="panel-section__hint">
-          Automatic incidents from monitor outages plus legacy demo context when no real incidents
-          exist yet.
+          Track automatic incidents from monitor outages. Open a row for timeline details and actions.
         </p>
       </div>
 

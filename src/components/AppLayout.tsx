@@ -18,9 +18,9 @@ export function AppLayout() {
         <div className="app-header__brand">
           <span className="app-header__mark" aria-hidden="true" />
           <div>
-            <h1>Operations Dashboard</h1>
+            <h1>Ops Monitor</h1>
             <p className="app-header__subtitle">
-              Monitor fleet health, uptime checks, and incident context in one operations view.
+              Uptime monitoring, incidents, alerts, and public status pages for small teams.
             </p>
           </div>
         </div>

@@ -50,9 +50,9 @@ export function FleetSummaryCards({ summary }: FleetSummaryCardsProps) {
     },
     {
       key: 'availability',
-      label: 'Synthetic Availability',
+      label: 'Process Availability',
       value: formatPercent(summary.availability_ratio),
-      hint: 'Legacy demo SLO signal',
+      hint: 'In-process SLO signal from backend',
     },
   ] as const;
 
