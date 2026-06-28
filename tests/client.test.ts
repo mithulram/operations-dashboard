@@ -5,11 +5,14 @@ import {
   fetchSummary,
   getAlertEvents,
   getAlertSettings,
+  getIncident,
   getMonitors,
   getStatusPage,
   runMonitorCheck,
   sendTestAlert,
   updateAlertSettings,
+  updateIncident,
+  addIncidentUpdate,
 } from '../src/api/client';
 import { normalizeApiBaseUrl } from '../src/utils';
 
@@ -201,5 +204,57 @@ describe('protected API client auth headers', () => {
     await sendTestAlert('secret-key');
     await getAlertEvents('secret-key');
     expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('loads incident detail and sends Bearer for protected incident actions', async () => {
+    const incidentPayload = {
+      id: 1,
+      identifier: 'INC-0001',
+      monitor_id: 1,
+      monitor_name: 'Example API',
+      service: 'Example API',
+      title: 'Example API is down',
+      severity: 'SEV-2',
+      status: 'OPEN',
+      summary: 'Monitor check failed',
+      started_at: '2026-06-28T00:00:00Z',
+      acknowledged_at: null,
+      resolved_at: null,
+      auto_created: true,
+    };
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/updates') && init?.method === 'POST') {
+        expect(init?.headers).toMatchObject({ Authorization: 'Bearer secret-key' });
+        return {
+          ok: true,
+          json: async () => ({
+            id: 2,
+            incident_id: 1,
+            message: 'Note',
+            status: null,
+            created_at: '2026-06-28T00:01:00Z',
+          }),
+        };
+      }
+      if (url.includes('/updates')) {
+        return { ok: true, json: async () => [] };
+      }
+      if (url.includes('/incidents/1') && init?.method === 'PATCH') {
+        expect(init?.headers).toMatchObject({ Authorization: 'Bearer secret-key' });
+        return { ok: true, json: async () => ({ ...incidentPayload, status: 'ACKNOWLEDGED' }) };
+      }
+      if (url.includes('/incidents/1')) {
+        return { ok: true, json: async () => incidentPayload };
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await getIncident(1);
+    await updateIncident(1, { status: 'acknowledged' }, 'secret-key');
+    await addIncidentUpdate(1, 'Note', 'secret-key');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });

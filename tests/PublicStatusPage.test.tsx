@@ -90,4 +90,37 @@ describe('PublicStatusPageRoute', () => {
       expect(screen.getByText('Service outage')).toBeInTheDocument();
     });
   });
+
+  it('renders recent incidents from public status JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockPublicFetch({
+        ...operationalStatus,
+        recent_incidents: [
+          {
+            title: 'Example API is down',
+            status: 'OPEN',
+            severity: 'SEV-2',
+            started_at: '2026-06-28T00:00:00Z',
+            resolved_at: null,
+            updates_count: 1,
+          },
+        ],
+      }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/status/default']}>
+        <Routes>
+          <Route path="/status/:slug" element={<PublicStatusPageRoute />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Recent incidents')).toBeInTheDocument();
+      expect(screen.getByText('Example API is down')).toBeInTheDocument();
+      expect(screen.getByText('Open')).toBeInTheDocument();
+    });
+  });
 });
